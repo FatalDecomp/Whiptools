@@ -18,7 +18,10 @@ namespace Whiptools
             {
                 int byteValue = Convert.ToInt32(inputData[inputPos]);
 
-                if (byteValue <= 0x3F) // 0x00 to 0x3F: read bytes from input
+                if (byteValue == 0x00) // 0x00: terminate output
+                    return outputData;
+
+                if (byteValue <= 0x3F) // 0x01 to 0x3F: read bytes from input
                 {
                     if (inputPos + 1 + byteValue > inputData.Length || outputPos + byteValue > outputLength)
                         throw new Exception();
