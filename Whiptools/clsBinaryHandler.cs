@@ -5,105 +5,106 @@ namespace Whiptools
 {
     class Unmangler
     {
-        public static byte[] Unmangle(byte[] inputData)
+        public static byte[] Unmangle(byte[] input)
         {
-            int outputLength = BitConverter.ToInt32(inputData, 0); // output length is first 4 bytes of input
-            var outputData = new byte[outputLength];
+            int outLength = BitConverter.ToInt32(input, 0); // output length is first 4 bytes of input
+            var output = new byte[outLength];
 
             // start positions
-            int inputPos = 4;
-            int outputPos = 0;
+            int inPos = 4;
+            int outPos = 0;
 
-            while ((inputPos < inputData.Length) && (outputPos < outputLength))
+            while ((inPos < input.Length) && (outPos < outLength))
             {
-                int byteValue = Convert.ToInt32(inputData[inputPos]);
+                int ctrl = Convert.ToInt32(input[inPos]);
 
-                if (byteValue == 0x00) // 0x00: terminate output
-                    return outputData;
+                if (ctrl == 0x00) // 0x00: terminate output
+                    return output;
 
-                if (byteValue <= 0x3F) // 0x01 to 0x3F: read bytes from input
+                if (ctrl <= 0x3F) // 0x01 to 0x3F: literal copy from input
                 {
-                    if (inputPos + 1 + byteValue > inputData.Length || outputPos + byteValue > outputLength)
+                    if (inPos + 1 + ctrl > input.Length || outPos + ctrl > outLength)
                         throw new Exception();
-                    Array.Copy(inputData, inputPos + 1, outputData, outputPos, byteValue);
-                    inputPos += byteValue + 1;
-                    outputPos += byteValue;
+                    Array.Copy(input, inPos + 1, output, outPos, ctrl);
+                    inPos += ctrl + 1;
+                    outPos += ctrl;
                 }
-                else if (byteValue <= 0x4F) // 0x40 to 0x4F: generate ascending bytes based on last 2 bytes
+                else if (ctrl <= 0x4F) // 0x40 to 0x4F: byte difference sequence
                 {
-                    int delta = outputData[outputPos - 1] - outputData[outputPos - 2];
-                    for (int i = 0; i < ((byteValue & 0x0F) + 3); i++)
+                    int delta = output[outPos - 1] - output[outPos - 2];
+                    for (int i = 0; i < (ctrl & 0x0F) + 3; i++)
                     {
-                        outputData[outputPos] = (byte)((outputData[outputPos - 1] + delta) & 0xFF);
-                        outputPos++;
+                        output[outPos] = (byte)((output[outPos - 1] + delta) & 0xFF);
+                        outPos++;
                     }
-                    inputPos++;
+                    inPos++;
                 }
-                else if (byteValue <= 0x5F) // 0x50 to 0x5F: generate ascending words based on last 2 words
+                else if (ctrl <= 0x5F) // 0x50 to 0x5F: word difference sequence
                 {
-                    short delta = (short)(BitConverter.ToInt16(outputData, outputPos - 2) -
-                        BitConverter.ToInt16(outputData, outputPos - 4));
-                    for (int i = 0; i < ((byteValue & 0x0F) + 2); i++)
+                    short delta = (short)(BitConverter.ToInt16(output, outPos - 2) -
+                        BitConverter.ToInt16(output, outPos - 4));
+                    for (int i = 0; i < (ctrl & 0x0F) + 2; i++)
                     {
-                        short newShort = (short)(BitConverter.ToInt16(outputData, outputPos - 2) + delta);
-                        outputData[outputPos] = (byte)(newShort & 0xFF);
-                        outputData[outputPos + 1] = (byte)((newShort >> 8) & 0xFF);
-                        outputPos += 2;
+                        short newShort = (short)(BitConverter.ToInt16(output, outPos - 2) + delta);
+                        output[outPos] = (byte)(newShort & 0xFF);
+                        output[outPos + 1] = (byte)((newShort >> 8) & 0xFF);
+                        outPos += 2;
                     }
-                    inputPos++;
+                    inPos++;
                 }
-                else if (byteValue <= 0x6F) // 0x60 to 0x6F: clone last byte in output
+                else if (ctrl <= 0x6F) // 0x60 to 0x6F: byte repeat
                 {
-                    for (int i = 0; i < ((byteValue & 0x0F) + 3); i++)
+                    for (int i = 0; i < (ctrl & 0x0F) + 3; i++)
                     {
-                        outputData[outputPos] = outputData[outputPos - 1];
-                        outputPos++;
+                        output[outPos] = output[outPos - 1];
+                        outPos++;
                     }
-                    inputPos++;
+                    inPos++;
                 }
-                else if (byteValue <= 0x7F) // 0x70 to 0x7F: clone last word in output
+                else if (ctrl <= 0x7F) // 0x70 to 0x7F: word repeat
                 {
-                    for (int i = 0; i < ((byteValue & 0x0F) + 2); i++)
+                    for (int i = 0; i < (ctrl & 0x0F) + 2; i++)
                     {
-                        outputData[outputPos] = outputData[outputPos - 2];
-                        outputData[outputPos + 1] = outputData[outputPos - 1];
-                        outputPos += 2;
+                        output[outPos] = output[outPos - 2];
+                        output[outPos + 1] = output[outPos - 1];
+                        outPos += 2;
                     }
-                    inputPos++;
+                    inPos++;
                 }
-                else if (byteValue <= 0xBF) // 0x80 to 0xBF: clone 3 bytes using offset
+                else if (ctrl <= 0xBF) // 0x80 to 0xBF: short block (3 bytes)
                 {
-                    int offset = (byteValue & 0x3F);
-                    outputData[outputPos] = outputData[outputPos - offset - 3];
-                    outputData[outputPos + 1] = outputData[outputPos - offset - 2];
-                    outputData[outputPos + 2] = outputData[outputPos - offset - 1];
-                    outputPos += 3;
-                    inputPos++;
+                    int offset = (ctrl & 0x3F) + 3;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        output[outPos] = output[outPos - offset];
+                        outPos++;
+                    }
+                    inPos++;
                 }
-                else if (byteValue <= 0xDF) // 0xC0 to 0xDF: clone using offset and length from next byte
+                else if (ctrl <= 0xDF) // 0xC0 to 0xDF: medium block (offset and length from next byte)
                 {
-                    int offset = ((byteValue & 0x03) << 8) + Convert.ToInt32(inputData[inputPos + 1]) + 3;
-                    int length = ((byteValue >> 2) & 0x07) + 4;
+                    int offset = ((ctrl & 0x03) << 8) + Convert.ToInt32(input[inPos + 1]) + 3;
+                    int length = ((ctrl >> 2) & 0x07) + 4;
                     for (int i = 0; i < length; i++)
                     {
-                        outputData[outputPos] = outputData[outputPos - offset];
-                        outputPos++;
+                        output[outPos] = output[outPos - offset];
+                        outPos++;
                     }
-                    inputPos += 2;
+                    inPos += 2;
                 }
-                else // 0xE0 to 0xFF: clone using offset and length from next 2 bytes
+                else // 0xE0 to 0xFF: long block (offset and length from next 2 bytes)
                 {
-                    int offset = ((byteValue & 0x1F) << 8) + Convert.ToInt32(inputData[inputPos + 1]) + 3;
-                    int length = Convert.ToInt32(inputData[inputPos + 2]) + 5;
+                    int offset = ((ctrl & 0x1F) << 8) + Convert.ToInt32(input[inPos + 1]) + 3;
+                    int length = Convert.ToInt32(input[inPos + 2]) + 5;
                     for (int i = 0; i < length; i++)
                     {
-                        outputData[outputPos] = outputData[outputPos - offset];
-                        outputPos++;
+                        output[outPos] = output[outPos - offset];
+                        outPos++;
                     }
-                    inputPos += 3;
+                    inPos += 3;
                 }
             }
-            return outputData;
+            return output;
         }
     }
 
@@ -121,16 +122,16 @@ namespace Whiptools
 
             while (pos < input.Length)
             {
-                // Try specialized encodings first
-                if (TryCloneLastByte(input, pos, literals, output, ref pos)) continue;
-                if (TryCloneLastWord(input, pos, literals, output, ref pos)) continue;
-                if (TryPredictByteSeq(input, pos, literals, output, ref pos)) continue;
-                if (TryPredictWordSeq(input, pos, literals, output, ref pos)) continue;
+                // try repeat/diff
+                if (TryByteRepeat(input, pos, literals, output, ref pos)) continue;
+                if (TryWordRepeat(input, pos, literals, output, ref pos)) continue;
+                if (TryByteDiffSeq(input, pos, literals, output, ref pos)) continue;
+                if (TryWordDiffSeq(input, pos, literals, output, ref pos)) continue;
 
-                // Try back-reference
-                if (TryBackref(input, pos, literals, output, ref pos)) continue;
+                // try block copy
+                if (TryBlockCopy(input, pos, literals, output, ref pos)) continue;
 
-                // Otherwise literal
+                // otherwise literal
                 literals.Add(input[pos]);
                 pos++;
                 if (literals.Count == 63)
@@ -142,7 +143,7 @@ namespace Whiptools
             return output.ToArray();
         }
 
-        // ----------------- Literals -----------------
+        // literal (0x01 to 0x3F)
 
         private static void FlushLiterals(List<byte> literals, List<byte> output)
         {
@@ -158,9 +159,9 @@ namespace Whiptools
             literals.Clear();
         }
 
-        // ----------------- RLE (0x60..0x6F) -----------------
+        // byte repeat (0x60 to 0x6F)
 
-        private static bool TryCloneLastByte(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static bool TryByteRepeat(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
         {
             if (pos == 0) return false;
             byte val = input[pos];
@@ -179,9 +180,9 @@ namespace Whiptools
             return true;
         }
 
-        // ----------------- Word clone (0x70..0x7F) -----------------
+        // word repeat (0x70 to 0x7F)
 
-        private static bool TryCloneLastWord(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static bool TryWordRepeat(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
         {
             if (pos < 2) return false;
 
@@ -208,9 +209,9 @@ namespace Whiptools
             return true;
         }
 
-        // ----------------- Predictor bytes (0x40..0x4F) -----------------
+        // byte diff sequence (0x40 to 0x4F)
 
-        private static bool TryPredictByteSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static bool TryByteDiffSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
         {
             if (pos < 2) return false;
 
@@ -234,9 +235,9 @@ namespace Whiptools
             return true;
         }
 
-        // ----------------- Predictor words (0x50..0x5F) -----------------
+        // word diff sequence (0x50 to 0x5F)
 
-        private static bool TryPredictWordSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static bool TryWordDiffSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
         {
             if (pos < 4 || pos + 1 >= input.Length) return false;
 
@@ -266,9 +267,9 @@ namespace Whiptools
             return true;
         }
 
-        // ----------------- Backrefs -----------------
+        // block copy (0x80 to 0xFF)
 
-        private static bool TryBackref(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static bool TryBlockCopy(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
         {
             int bestLen = 0;
             int bestDist = 0;
@@ -280,7 +281,7 @@ namespace Whiptools
                 int s = pos - dist;
                 int m = 0;
 
-                // Quick reject: check first byte before entering loop
+                // quick reject: check first byte before entering loop
                 if (input[s] != input[pos]) continue;
 
                 while (m < maxMatch && input[s + m] == input[pos + m]) m++;
@@ -290,10 +291,10 @@ namespace Whiptools
                     bestLen = m;
                     bestDist = dist;
 
-                    // Early exit: can't encode longer than 260
+                    // early exit: can't encode longer than 260
                     if (bestLen == 260) break;
 
-                    // Optional: break if bestLen already >= 18
+                    // optional: break if bestLen already >= 18
                     if (bestLen >= 18 && bestDist <= 8194) break;
                 }
             }
@@ -302,23 +303,23 @@ namespace Whiptools
 
             FlushLiterals(literals, output);
 
-            if (bestLen >= 5 && bestDist <= 8194)
+            if (bestLen >= 5 && bestDist <= 8194) // long block (0xE0 to 0xFF)
             {
                 int len = Math.Min(bestLen, 260);
-                EmitCopyLong(output, bestDist, len);
+                EmitLongBlock(output, bestDist, len);
                 newPos = pos + len;
                 return true;
             }
-            if (bestLen >= 4 && bestDist <= 1026)
+            if (bestLen >= 4 && bestDist <= 1026) // medium block (0xC0 to 0xDF)
             {
                 int len = Math.Min(bestLen, 11);
-                EmitCopyShort(output, bestDist, len);
+                EmitMediumBlock(output, bestDist, len);
                 newPos = pos + len;
                 return true;
             }
-            if (bestLen >= 3 && bestDist <= 66)
+            if (bestLen >= 3 && bestDist <= 66) // short block (0x80 to 0xBF)
             {
-                EmitCopy3(output, bestDist);
+                EmitShortBlock(output, bestDist);
                 newPos = pos + 3;
                 return true;
             }
@@ -326,14 +327,14 @@ namespace Whiptools
             return false;
         }
 
-        private static void EmitCopy3(List<byte> output, int distance)
+        private static void EmitShortBlock(List<byte> output, int distance)
         {
             int off = distance - 3;
             byte ctrl = (byte)(0x80 | off);
             output.Add(ctrl);
         }
 
-        private static void EmitCopyShort(List<byte> output, int distance, int length)
+        private static void EmitMediumBlock(List<byte> output, int distance, int length)
         {
             int off = distance - 3;
             int offHi = (off >> 8) & 0x03;
@@ -343,7 +344,7 @@ namespace Whiptools
             output.Add((byte)offLo);
         }
 
-        private static void EmitCopyLong(List<byte> output, int distance, int length)
+        private static void EmitLongBlock(List<byte> output, int distance, int length)
         {
             int off = distance - 3;
             int offHi = (off >> 8) & 0x1F;
