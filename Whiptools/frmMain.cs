@@ -223,25 +223,23 @@ namespace Whiptools
                     if (openDialog.ShowDialog() != DialogResult.OK)
                         return;
 
-                    using (var folderDialog = new FolderBrowserDialog
+                    string filename = openDialog.FileName;
+                    byte[] rawData = File.ReadAllBytes(filename);
+                    byte[] decodedData = FibCipher.Decode(rawData, a0, a1);
+                    using (var saveDialog = new SaveFileDialog
                     {
-                        Description = "Save INI file in:"
+                        Filter = "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
+                        FileName = $"{Path.GetFileNameWithoutExtension(filename)}_decoded" + 
+                            Path.GetExtension(filename),
+                        Title = $"Save Decoded {IniFilename} As"
                     })
                     {
-                        if (folderDialog.ShowDialog() != DialogResult.OK)
+                        if (saveDialog.ShowDialog() != DialogResult.OK)
                             return;
 
-                        string outputfile = "";
-                        foreach (String filename in openDialog.FileNames)
-                        {
-                            byte[] rawData = File.ReadAllBytes(filename);
-                            byte[] decodedData = FibCipher.Decode(rawData, a0, a1);
-                            outputfile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileNameWithoutExtension(filename)}_decoded" +
-                                Path.GetExtension(filename);
-                            File.WriteAllBytes(outputfile, decodedData);
-                        }
-                        MessageBox.Show("Saved " + outputfile, "RACE OVER",
+                        string savefile = saveDialog.FileName;
+                        File.WriteAllBytes(savefile, decodedData);
+                        MessageBox.Show($"Saved {savefile}", "RACE OVER",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
