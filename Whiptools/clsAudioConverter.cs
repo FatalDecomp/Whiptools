@@ -93,7 +93,7 @@ namespace Whiptools
             }
             else
             {
-                return Array.Empty<byte>();
+                throw new Exception();
             }
         }
 

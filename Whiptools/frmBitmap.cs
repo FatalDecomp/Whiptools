@@ -34,28 +34,28 @@ namespace Whiptools
                 Title = "Save As"
             })
             {
-                if (saveDialog.ShowDialog() == DialogResult.OK)
+                if (saveDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
+                using (var bitmap = new Bitmap(pictureBox.Image))
                 {
-                    using (var bitmap = new Bitmap(pictureBox.Image))
+                    string ext = Path.GetExtension(saveDialog.FileName);
+                    switch (ext.ToLower())
                     {
-                        string ext = Path.GetExtension(saveDialog.FileName);
-                        switch (ext.ToLower())
-                        {
-                            case ".png":
-                                bitmap.Save(saveDialog.FileName, ImageFormat.Png);
-                                MessageBox.Show("Saved " + saveDialog.FileName, "RACE OVER",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                break;
-                            case ".bmp":
-                                bitmap.Save(saveDialog.FileName, ImageFormat.Bmp);
-                                MessageBox.Show("Saved " + saveDialog.FileName, "RACE OVER",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                break;
-                            default:
-                                MessageBox.Show("FATALITY!", "NETWORK ERROR",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                break;
-                        }
+                        case ".png":
+                            bitmap.Save(saveDialog.FileName, ImageFormat.Png);
+                            MessageBox.Show("Saved " + saveDialog.FileName, "RACE OVER",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            break;
+                        case ".bmp":
+                            bitmap.Save(saveDialog.FileName, ImageFormat.Bmp);
+                            MessageBox.Show("Saved " + saveDialog.FileName, "RACE OVER",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            break;
+                        default:
+                            MessageBox.Show("FATALITY!", "NETWORK ERROR",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            break;
                     }
                 }
             }

@@ -290,7 +290,7 @@ namespace Whiptools
             this.btnSaveBMFile.Name = "btnSaveBMFile";
             this.btnSaveBMFile.Size = new System.Drawing.Size(536, 36);
             this.btnSaveBMFile.TabIndex = 4;
-            this.btnSaveBMFile.Text = "Save BM File";
+            this.btnSaveBMFile.Text = "Load Palette and Save BM";
             this.btnSaveBMFile.UseVisualStyleBackColor = true;
             this.btnSaveBMFile.Click += new System.EventHandler(this.btnSaveBMFile_Click);
             // 

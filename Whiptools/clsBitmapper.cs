@@ -10,6 +10,8 @@ namespace Whiptools
     {
         public static Color[] ConvertRGBToPalette(byte[] inputArray)
         {
+            if (inputArray.Length %3 != 0)
+                throw new Exception();
             Color[] output = new Color[inputArray.Length / 3];
             for (int i = 0; i < output.Length; i++)
             {
@@ -92,28 +94,37 @@ namespace Whiptools
             for (int i = 0; i < palette.Length; i++)
                 paletteDict[palette[i]] = (byte)i;
 
-            var bitmapData = bitmap.LockBits(new Rectangle(0, 0, width, height),
-                ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-            int stride = bitmapData.Stride;
-            byte[] pixelData = new byte[stride * height];
-            Marshal.Copy(bitmapData.Scan0, pixelData, 0, pixelData.Length);
-            for (int y = 0; y < height; y++)
+            using (var clone = bitmap.Clone(new Rectangle(0, 0, width, height), bitmap.PixelFormat))
             {
-                for (int x = 0; x < width; x++)
+                var rect = new Rectangle(0, 0, width, height);
+                var bitmapData = clone.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                try
                 {
-                    int offset = y * stride + x * 3;
-                    byte B = pixelData[offset];
-                    byte G = pixelData[offset + 1];
-                    byte R = pixelData[offset + 2];
-                    Color colorLow = GetColorLow(Color.FromArgb(R, G, B));
+                    int stride = bitmapData.Stride;
+                    byte[] pixelData = new byte[stride * height];
+                    Marshal.Copy(bitmapData.Scan0, pixelData, 0, pixelData.Length);
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            int offset = y * stride + x * 3;
+                            byte B = pixelData[offset];
+                            byte G = pixelData[offset + 1];
+                            byte R = pixelData[offset + 2];
+                            Color colorLow = GetColorLow(Color.FromArgb(R, G, B));
 
-                    if (paletteDict.TryGetValue(colorLow, out byte paletteIndex))
-                        output[y * width + x] = paletteIndex;
-                    else
-                        return Array.Empty<byte>();
+                            if (paletteDict.TryGetValue(colorLow, out byte paletteIndex))
+                                output[y * width + x] = paletteIndex;
+                            else
+                                throw new Exception();
+                        }
+                    }
+                }
+                finally
+                {
+                    clone.UnlockBits(bitmapData);
                 }
             }
-            bitmap.UnlockBits(bitmapData);
             return output;
         }
 
@@ -123,7 +134,7 @@ namespace Whiptools
         {
             byte[] output = new byte[input.Length];
             for (int i = 0; i < input.Length; i++)
-                output[i] = (byte)GetIntHigh(Convert.ToInt32(input[i]));
+                output[i] = (byte)GetIntHigh(input[i]);
             return output;
         }
 
@@ -137,19 +148,12 @@ namespace Whiptools
         private static Color GetColorLow(Color input)
         {
             return Color.FromArgb(
-                GetIntLow(input.R),
-                GetIntLow(input.G),
-                GetIntLow(input.B));
+                input.R >> 2,
+                input.G >> 2,
+                input.B >> 2);
         }
 
-        private static int GetIntHigh(int input)
-        {
-            return (input << 2) + (input >> 4);
-        }
-
-        private static int GetIntLow(int input)
-        {
-            return (input >> 2);
-        }
+        private static int GetIntHigh(int input) =>
+            (input << 2) + (input >> 4);
     }
 }
