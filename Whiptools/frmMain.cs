@@ -80,7 +80,7 @@ namespace Whiptools
 
                 using (var folderDialog = new FolderBrowserDialog
                 {
-                    Description = $"Save {MangleType(unmangle).ToLower()} d files in:"
+                    Description = $"Save {MangleType(unmangle).ToLower()}d files in:"
                 })
                 {
                     if (folderDialog.ShowDialog() != DialogResult.OK)
