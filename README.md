@@ -10,9 +10,9 @@ Tools for decoding, encoding and viewing _Fatal Racing/Whiplash_ game files:
 - Palette file extraction and export to image
 - Conversion of images to .BM/.DRH format
 
-Visit the [**Whiptools wiki**](https://github.com/ninjatobob/Whiptools/wiki) for further information on the unmangling and decoding algorithms, file formats and game versions.
+Visit the [**Whiptools wiki**](https://github.com/ninjatobob/Whiptools/wiki) for further information on the unmangling and decoding algorithms, file formats, game versions and car dynamics including the [Whiplash Engine Simulator](EngineSimulator).
 
 # YOU NEED MORE PRACTICE
-![Whiplash XP](https://github.com/FatalDecomp/Whiptools/blob/03e4f08c93d1bb10e62961eca7efc1add9eeebef/media/Whiplash%20XP.png)
+![Whiplash XP](media/Whiplash%20XP.png)
 
 **RACE OVER**
