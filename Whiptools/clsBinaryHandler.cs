@@ -279,11 +279,11 @@ namespace Whiptools
             for (int dist = 3; dist <= maxSearch; dist++)
             {
                 int s = pos - dist;
-                int m = 0;
 
                 // quick reject: check first byte before entering loop
                 if (input[s] != input[pos]) continue;
 
+                int m = 0;
                 while (m < maxMatch && input[s + m] == input[pos + m]) m++;
 
                 if (m > bestLen)
@@ -330,30 +330,22 @@ namespace Whiptools
         private static void EmitShortBlock(List<byte> output, int distance)
         {
             int off = distance - 3;
-            byte ctrl = (byte)(0x80 | off);
-            output.Add(ctrl);
+            output.Add((byte)(0x80 | off));
         }
 
         private static void EmitMediumBlock(List<byte> output, int distance, int length)
         {
             int off = distance - 3;
-            int offHi = (off >> 8) & 0x03;
-            int offLo = off & 0xFF;
-            byte ctrl = (byte)(0xC0 | ((length - 4) << 2) | offHi);
-            output.Add(ctrl);
-            output.Add((byte)offLo);
+            output.Add((byte)(0xC0 | ((length - 4) << 2) | ((off >> 8) & 0x03)));
+            output.Add((byte)(off & 0xFF));
         }
 
         private static void EmitLongBlock(List<byte> output, int distance, int length)
         {
             int off = distance - 3;
-            int offHi = (off >> 8) & 0x1F;
-            int offLo = off & 0xFF;
-            byte ctrl = (byte)(0xE0 | offHi);
-            byte lenByte = (byte)(length - 5);
-            output.Add(ctrl);
-            output.Add((byte)offLo);
-            output.Add(lenByte);
+            output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
+            output.Add((byte)(off & 0xFF));
+            output.Add((byte)(length - 5));
         }
     }
 
