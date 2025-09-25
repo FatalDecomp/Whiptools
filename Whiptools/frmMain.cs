@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -93,6 +94,7 @@ namespace Whiptools
                     var filelist = openDialog.FileNames
                         .Select(f => new FileInfo(f))
                         .OrderByDescending(fi => fi.Length);
+                    var sw = Stopwatch.StartNew();
                     Parallel.ForEach(filelist, fi =>
                     {
                         try
@@ -119,6 +121,7 @@ namespace Whiptools
                             Interlocked.Increment(ref countFail);
                         }
                     });
+                    sw.Stop();
                     string msg = "";
                     if (openDialog.FileNames.Length == 1)
                     {
@@ -138,9 +141,11 @@ namespace Whiptools
                                 $"Failed to {MangleType(unmangle).ToLower()} {countFail} file(s)!";
                     }
                     if (countFail > 0)
-                        MessageBox.Show(msg, "FATALITY!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(msg, $"FATALITY! ({sw.Elapsed.TotalSeconds:F3}s)",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
                     else
-                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(msg, $"RACE OVER ({sw.Elapsed.TotalSeconds:F3}s)",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
