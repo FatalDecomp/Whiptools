@@ -21,8 +21,7 @@ namespace Whiptools
 
                 if (ctrl == 0x00) // 0x00: terminate output
                     return output;
-
-                if (ctrl <= 0x3F) // 0x01 to 0x3F: literal copy from input
+                else if (ctrl <= 0x3F) // 0x01..0x3F: literal copy from input
                 {
                     if (inPos + 1 + ctrl > input.Length || outPos + ctrl > outLength)
                         throw new Exception();
@@ -30,7 +29,7 @@ namespace Whiptools
                     inPos += ctrl + 1;
                     outPos += ctrl;
                 }
-                else if (ctrl <= 0x4F) // 0x40 to 0x4F: byte difference sequence
+                else if (ctrl <= 0x4F) // 0x40..0x4F: byte diff
                 {
                     int delta = output[outPos - 1] - output[outPos - 2];
                     for (int i = 0; i < (ctrl & 0x0F) + 3; i++)
@@ -40,7 +39,7 @@ namespace Whiptools
                     }
                     inPos++;
                 }
-                else if (ctrl <= 0x5F) // 0x50 to 0x5F: word difference sequence
+                else if (ctrl <= 0x5F) // 0x50..0x5F: word diff
                 {
                     short delta = (short)(BitConverter.ToInt16(output, outPos - 2) -
                         BitConverter.ToInt16(output, outPos - 4));
@@ -53,7 +52,7 @@ namespace Whiptools
                     }
                     inPos++;
                 }
-                else if (ctrl <= 0x6F) // 0x60 to 0x6F: byte repeat
+                else if (ctrl <= 0x6F) // 0x60..0x6F: byte repeat
                 {
                     for (int i = 0; i < (ctrl & 0x0F) + 3; i++)
                     {
@@ -62,7 +61,7 @@ namespace Whiptools
                     }
                     inPos++;
                 }
-                else if (ctrl <= 0x7F) // 0x70 to 0x7F: word repeat
+                else if (ctrl <= 0x7F) // 0x70..0x7F: word repeat
                 {
                     for (int i = 0; i < (ctrl & 0x0F) + 2; i++)
                     {
@@ -72,7 +71,7 @@ namespace Whiptools
                     }
                     inPos++;
                 }
-                else if (ctrl <= 0xBF) // 0x80 to 0xBF: short block (3 bytes)
+                else if (ctrl <= 0xBF) // 0x80..0xBF: short block (3 bytes)
                 {
                     int offset = (ctrl & 0x3F) + 3;
                     for (int i = 0; i < 3; i++)
@@ -82,7 +81,7 @@ namespace Whiptools
                     }
                     inPos++;
                 }
-                else if (ctrl <= 0xDF) // 0xC0 to 0xDF: medium block (offset and length from next byte)
+                else if (ctrl <= 0xDF) // 0xC0..0xDF: medium block (offset and length from next byte)
                 {
                     int offset = ((ctrl & 0x03) << 8) + Convert.ToInt32(input[inPos + 1]) + 3;
                     int length = ((ctrl >> 2) & 0x07) + 4;
@@ -93,7 +92,7 @@ namespace Whiptools
                     }
                     inPos += 2;
                 }
-                else // 0xE0 to 0xFF: long block (offset and length from next 2 bytes)
+                else // 0xE0..0xFF: long block (offset and length from next 2 bytes)
                 {
                     int offset = ((ctrl & 0x1F) << 8) + Convert.ToInt32(input[inPos + 1]) + 3;
                     int length = Convert.ToInt32(input[inPos + 2]) + 5;
@@ -111,6 +110,28 @@ namespace Whiptools
 
     class Mangler
     {
+        private enum Opcode
+        {
+            None = 0,
+            ByteDiff,    // 0x40..0x4F
+            WordDiff,    // 0x50..0x5F
+            ByteRepeat,  // 0x60..0x6F
+            WordRepeat,  // 0x70..0x7F
+            ShortBlock,  // 0x80..0xBF
+            MediumBlock, // 0xC0..0xDF
+            LongBlock,   // 0xE0..0xFF
+        }
+
+        private struct Candidate
+        {
+            public Opcode Type; // opcode
+            public int Cover;   // input bytes advanced
+            public int Cost;    // output bytes added
+            public int Dist;    // blocks
+            public int Len;     // length (bytes or words)
+            public bool IsValid { get { return Type != Opcode.None && Cover > 0; } }
+        }
+
         public static byte[] Mangle(byte[] input)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
@@ -123,25 +144,41 @@ namespace Whiptools
 
             while (pos < input.Length)
             {
-                // try repeat/diff
-                if (TryByteRepeat(input, pos, literals, outlist, ref pos)) continue;
-                if (TryWordRepeat(input, pos, literals, outlist, ref pos)) continue;
-                if (TryByteDiffSeq(input, pos, literals, outlist, ref pos)) continue;
-                if (TryWordDiffSeq(input, pos, literals, outlist, ref pos)) continue;
+                Candidate bestNow = ChooseBest(input, pos);
+                if (!bestNow.IsValid)
+                {
+                    // no non-literal token fits: collect literal
+                    literals.Add(input[pos]);
+                    pos++;
+                    if (literals.Count == 63) FlushLiterals(literals, outlist);
+                    continue;
+                }
 
-                // try block copy
-                if (TryBlockCopy(input, pos, literals, outlist, ref pos)) continue;
+                // one literal + best at next pos
+                Candidate bestNext = (pos + 1 < input.Length) ? ChooseBest(input, pos + 1) : default;
 
-                // otherwise literal
-                literals.Add(input[pos]);
-                pos++;
-                if (literals.Count == 63)
-                    FlushLiterals(literals, outlist);
+                // take literal only when it clearly helps compression (worst case cost = 2)
+                double nowRatio = (double)bestNow.Cost / (double)bestNow.Cover;
+                double laRatio = (bestNext.IsValid)
+                    ? (double)(2 + bestNext.Cost) / (double)(1 + bestNext.Cover)
+                    : double.MaxValue;
+
+                if (laRatio < nowRatio)
+                {
+                    literals.Add(input[pos]); // take one literal and re-evaluate
+                    pos++;
+                    if (literals.Count == 63) FlushLiterals(literals, outlist);
+                    continue;
+                }
+
+                FlushLiterals(literals, outlist);
+                Emit(outlist, bestNow);
+                pos += bestNow.Cover;
             }
-            
+
             FlushLiterals(literals, outlist);
             outlist.Add((byte)0x00); // terminate with zero
-            
+
             byte[] output = outlist.ToArray();
             if (Verify(input, output)) // verify output
                 return output;
@@ -149,10 +186,49 @@ namespace Whiptools
                 throw new ArgumentNullException(nameof(output));
         }
 
-        // literal (0x01 to 0x3F)
+        private static Candidate ChooseBest(byte[] input, int pos)
+        {
+            Candidate best = default;
+            Candidate c;
+            c = TryByteDiff(input, pos); best = Better(best, c);
+            c = TryWordDiff(input, pos); best = Better(best, c);
+            c = TryByteRepeat(input, pos); best = Better(best, c);
+            c = TryWordRepeat(input, pos); best = Better(best, c);
+            c = TryBlock(input, pos); best = Better(best, c);
+            return best;
+        }
+
+        private static Candidate Better(Candidate a, Candidate b)
+        {
+            if (!b.IsValid) return a;
+            if (!a.IsValid) return b;
+
+            // prefer lower cost per covered byte
+            double ra = (double)a.Cost / (double)a.Cover;
+            double rb = (double)b.Cost / (double)b.Cover;
+            if (rb < ra) return b;
+            if (ra < rb) return a;
+
+            // tie-breaker: larger cover
+            if (b.Cover > a.Cover) return b;
+            if (a.Cover > b.Cover) return a;
+
+            // tie-breaker: prefer block over diff/repeat
+            bool aIsBlock = a.Type == Opcode.ShortBlock || a.Type == Opcode.MediumBlock || a.Type == Opcode.LongBlock;
+            bool bIsBlock = b.Type == Opcode.ShortBlock || b.Type == Opcode.MediumBlock || b.Type == Opcode.LongBlock;
+            if (bIsBlock && !aIsBlock) return b;
+            if (aIsBlock && !bIsBlock) return a;
+
+            // tie-breaker: shorter distance
+            if (b.Dist != 0 && a.Dist != 0 && b.Dist < a.Dist)
+                return b;
+            else
+                return a;
+        }
 
         private static void FlushLiterals(List<byte> literals, List<byte> output)
         {
+            if (literals.Count == 0) return;
             int idx = 0;
             while (idx < literals.Count)
             {
@@ -165,117 +241,157 @@ namespace Whiptools
             literals.Clear();
         }
 
-        // byte repeat (0x60 to 0x6F)
-
-        private static bool TryByteRepeat(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static void Emit(List<byte> output, Candidate c)
         {
-            if (pos == 0) return false;
-            byte val = input[pos];
-            if (val != input[pos - 1]) return false;
-
-            int run = 1;
-            while (pos + run < input.Length && input[pos + run] == val) run++;
-            if (run < 3) return false;
-
-            FlushLiterals(literals, output);
-            int toEmit = Math.Min(run, 18);
-            byte ctrl = (byte)(0x60 | (toEmit - 3));
-            output.Add(ctrl);
-
-            newPos = pos + toEmit;
-            return true;
-        }
-
-        // word repeat (0x70 to 0x7F)
-
-        private static bool TryWordRepeat(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
-        {
-            if (pos < 2) return false;
-
-            if (pos + 1 >= input.Length) return false;
-            byte a0 = input[pos], a1 = input[pos + 1];
-            byte b0 = input[pos - 2], b1 = input[pos - 1];
-            if (a0 != b0 || a1 != b1) return false;
-
-            int runWords = 1;
-            while (pos + 2 * runWords + 1 < input.Length)
+            switch (c.Type)
             {
-                if (input[pos + 2 * runWords] != b0 || input[pos + 2 * runWords + 1] != b1)
-                    break;
-                runWords++;
+                case Opcode.ByteDiff: // 0x40..0x4F
+                    {
+                        int len = c.Len - 3;
+                        output.Add((byte)(0x40 | len));
+                        break;
+                    }
+                case Opcode.WordDiff: // 0x50..0x5F
+                    {
+                        int len = c.Len - 2;
+                        output.Add((byte)(0x50 | len));
+                        break;
+                    }
+                case Opcode.ByteRepeat: // 0x60..0x6F
+                    {
+                        int len = c.Len - 3;
+                        output.Add((byte)(0x60 | len));
+                        break;
+                    }
+                case Opcode.WordRepeat: // 0x70..0x7F
+                    {
+                        int len = c.Len - 2;
+                        output.Add((byte)(0x70 | len));
+                        break;
+                    }
+                case Opcode.ShortBlock: // 0x80..0xBF
+                    {
+                        int off = c.Dist - 3;
+                        output.Add((byte)(0x80 | off));
+                        break;
+                    }
+                case Opcode.MediumBlock: // 0xC0..0xDF
+                    {
+                        int off = c.Dist - 3;
+                        output.Add((byte)(0xC0 | ((c.Len - 4) << 2) | ((off >> 8) & 0x03)));
+                        output.Add((byte)(off & 0xFF));
+                        break;
+                    }
+                case Opcode.LongBlock: // 0xE0..0xFF
+                    {
+                        int off = c.Dist - 3;
+                        output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
+                        output.Add((byte)(off & 0xFF));
+                        output.Add((byte)(c.Len - 5));
+                        break;
+                    }
             }
-            if (runWords < 2) return false;
-
-            FlushLiterals(literals, output);
-            int toEmit = Math.Min(runWords, 17); // 2..17 words
-            byte ctrl = (byte)(0x70 | (toEmit - 2));
-            output.Add(ctrl);
-
-            newPos = pos + 2 * toEmit;
-            return true;
         }
 
-        // byte diff sequence (0x40 to 0x4F)
-
-        private static bool TryByteDiffSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static Candidate TryByteDiff(byte[] input, int pos)
         {
-            if (pos < 2) return false;
+            if (pos < 2) return default;
 
-            int delta = input[pos - 1] - input[pos - 2];
+            byte b0 = input[pos - 2], b1 = input[pos - 1];
+            int delta = b1 - b0;
             int len = 0;
-            byte prev = input[pos - 1];
-            while (pos + len < input.Length && input[pos + len] == (byte)(prev + delta))
+            int max = Math.Min(18, input.Length - pos);
+            while (len < max && input[pos + len] == (byte)(b1 + delta))
             {
-                prev = input[pos + len];
+                b1 = input[pos + len];
                 len++;
             }
+            if (len < 3) return default;
 
-            if (len < 3) return false;
-
-            FlushLiterals(literals, output);
-            int toEmit = Math.Min(len, 18); // 3..18
-            byte ctrl = (byte)(0x40 | (toEmit - 3));
-            output.Add(ctrl);
-
-            newPos = pos + toEmit;
-            return true;
+            return new Candidate
+            {
+                Type = Opcode.ByteDiff,
+                Cover = len,
+                Cost = 1,
+                Len = len
+            };
         }
 
-        // word diff sequence (0x50 to 0x5F)
-
-        private static bool TryWordDiffSeq(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+        private static Candidate TryWordDiff(byte[] input, int pos)
         {
-            if (pos < 4 || pos + 1 >= input.Length) return false;
+            if (pos < 4 || pos + 1 >= input.Length) return default;
 
-            short w0 = BitConverter.ToInt16(input, pos - 4);
-            short w1 = BitConverter.ToInt16(input, pos - 2);
-            short delta = (short)(w1 - w0);
-
+            short b0 = BitConverter.ToInt16(input, pos - 4);
+            short b1 = BitConverter.ToInt16(input, pos - 2);
+            short delta = (short)(b1 - b0);
             int len = 0;
-            short prev = w1;
-            while (pos + 2 * len + 1 < input.Length)
+            int max = 17;
+            while (len < max && pos + 2 * len + 1 < input.Length)
             {
-                short expect = (short)(prev + delta);
+                short expect = (short)(b1 + (len + 1) * delta);
                 short actual = BitConverter.ToInt16(input, pos + 2 * len);
                 if (expect != actual) break;
-                prev = actual;
                 len++;
             }
+            if (len < 2) return default;
 
-            if (len < 2) return false;
+            return new Candidate
+            {
+                Type = Opcode.WordDiff,
+                Cover = len * 2,
+                Cost = 1,
+                Len = len
+            };
+        }
+        
+        private static Candidate TryByteRepeat(byte[] input, int pos)
+        {
+            if (pos == 0) return default;
 
-            FlushLiterals(literals, output);
-            int toEmit = Math.Min(len, 17); // 2..17
-            byte ctrl = (byte)(0x50 | (toEmit - 2));
-            output.Add(ctrl);
+            byte a = input[pos], b = input[pos - 1];
+            if (a != b) return default;
 
-            newPos = pos + 2 * toEmit;
-            return true;
+            int len = 1;
+            int max = Math.Min(18, input.Length - pos);
+            while (len < max && input[pos + len] == a) len++;
+            if (len < 3) return default;
+
+            return new Candidate
+            {
+                Type = Opcode.ByteRepeat,
+                Cover = len,
+                Cost = 1,
+                Len = len
+            };
         }
 
-        // block copy (0x80 to 0xFF)
+        private static Candidate TryWordRepeat(byte[] input, int pos)
+        {
+            if (pos < 2 || pos + 1 >= input.Length) return default;
 
-        private static bool TryBlockCopy(byte[] input, int pos, List<byte> literals, List<byte> output, ref int newPos)
+            byte a0 = input[pos], a1 = input[pos + 1];
+            byte b0 = input[pos - 2], b1 = input[pos - 1];
+            if (a0 != b0 || a1 != b1) return default;
+
+            int len = 1;
+            int max = 17;
+            while (len < max && pos + 2 * len + 1 < input.Length)
+            {
+                if (input[pos + 2 * len] != b0 || input[pos + 2 * len + 1] != b1) break;
+                len++;
+            }
+            if (len < 2) return default;
+
+            return new Candidate
+            {
+                Type = Opcode.WordRepeat,
+                Cover = len * 2,
+                Cost = 1,
+                Len = len
+            };
+        }
+
+        private static Candidate TryBlock(byte[] input, int pos)
         {
             int bestLen = 0;
             int bestDist = 0;
@@ -286,8 +402,11 @@ namespace Whiptools
             {
                 int s = pos - dist;
 
-                // quick reject: check first byte before entering loop
-                if (input[s] != input[pos]) continue;
+                // quick reject: 2 bytes if possible, otherwise 1 byte
+                if (pos + 1 < input.Length && s + 1 < input.Length)
+                    if (input[s] != input[pos] || input[s + 1] != input[pos + 1]) continue;
+                else
+                    if (input[s] != input[pos]) continue;
 
                 int m = 0;
                 while (m < maxMatch && input[s + m] == input[pos + m]) m++;
@@ -299,60 +418,53 @@ namespace Whiptools
 
                     // early exit: can't encode longer than 260
                     if (bestLen == 260) break;
-
-                    // optional: break if bestLen already >= 18
-                    if (bestLen >= 18 && bestDist <= 8194) break;
                 }
             }
 
-            if (bestLen < 3) return false;
+            // medium: offset 3..1026, len 4..11, cost 2
+            if (bestDist <= 1026 && bestLen >= 4 && bestLen <= 11)
+            {
+                return new Candidate
+                {
+                    Type = Opcode.MediumBlock,
+                    Cover = bestLen,
+                    Cost = 2,
+                    Dist = bestDist,
+                    Len = bestLen
+                };
+            }
 
-            FlushLiterals(literals, output);
+            // short: offset 3..66, len 3, cost 1
+            if (bestDist <= 66 && bestLen >= 3)
+            {
+                return new Candidate
+                {
+                    Type = Opcode.ShortBlock,
+                    Cover = 3,
+                    Cost = 1,
+                    Dist = bestDist,
+                    Len = 3
+                };
+            }
 
-            if (bestLen >= 5 && bestDist <= 8194) // long block (0xE0 to 0xFF)
+            // long: len 5..260, dist 3..8194, cost 3
+            if (bestDist <= 8194 && bestLen >= 5)
             {
                 int len = Math.Min(bestLen, 260);
-                EmitLongBlock(output, bestDist, len);
-                newPos = pos + len;
-                return true;
-            }
-            if (bestLen >= 4 && bestDist <= 1026) // medium block (0xC0 to 0xDF)
-            {
-                int len = Math.Min(bestLen, 11);
-                EmitMediumBlock(output, bestDist, len);
-                newPos = pos + len;
-                return true;
-            }
-            if (bestLen >= 3 && bestDist <= 66) // short block (0x80 to 0xBF)
-            {
-                EmitShortBlock(output, bestDist);
-                newPos = pos + 3;
-                return true;
+                return new Candidate
+                {
+                    Type = Opcode.LongBlock,
+                    Cover = len,
+                    Cost = 3,
+                    Dist = bestDist,
+                    Len = len
+                };
             }
 
-            return false;
+            // no block suitable
+            return default;
         }
 
-        private static void EmitShortBlock(List<byte> output, int distance)
-        {
-            int off = distance - 3;
-            output.Add((byte)(0x80 | off));
-        }
-
-        private static void EmitMediumBlock(List<byte> output, int distance, int length)
-        {
-            int off = distance - 3;
-            output.Add((byte)(0xC0 | ((length - 4) << 2) | ((off >> 8) & 0x03)));
-            output.Add((byte)(off & 0xFF));
-        }
-
-        private static void EmitLongBlock(List<byte> output, int distance, int length)
-        {
-            int off = distance - 3;
-            output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
-            output.Add((byte)(off & 0xFF));
-            output.Add((byte)(length - 5));
-        }
         private static bool Verify(byte[] original, byte[] mangled)
         {
             byte[] unmangled = Unmangler.Unmangle(mangled);
