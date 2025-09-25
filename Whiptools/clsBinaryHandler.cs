@@ -421,23 +421,12 @@ namespace Whiptools
                 }
             }
 
-            // medium: offset 3..1026, len 4..11, cost 2
-            if (bestDist <= 1026 && bestLen >= 4 && bestLen <= 11)
-            {
-                return new Candidate
-                {
-                    Type = Opcode.MediumBlock,
-                    Cover = bestLen,
-                    Cost = 2,
-                    Dist = bestDist,
-                    Len = bestLen
-                };
-            }
+            Candidate best = default;
 
             // short: offset 3..66, len 3, cost 1
             if (bestDist <= 66 && bestLen >= 3)
             {
-                return new Candidate
+                var c = new Candidate
                 {
                     Type = Opcode.ShortBlock,
                     Cover = 3,
@@ -445,13 +434,29 @@ namespace Whiptools
                     Dist = bestDist,
                     Len = 3
                 };
+                best = Better(best, c);
+            }
+
+            // medium: offset 3..1026, len 4..11, cost 2
+            if (bestDist <= 1026 && bestLen >= 4)
+            {
+                int len = Math.Min(bestLen, 11);
+                var c = new Candidate
+                {
+                    Type = Opcode.MediumBlock,
+                    Cover = len,
+                    Cost = 2,
+                    Dist = bestDist,
+                    Len = len
+                };
+                best = Better(best, c);
             }
 
             // long: len 5..260, dist 3..8194, cost 3
             if (bestDist <= 8194 && bestLen >= 5)
             {
                 int len = Math.Min(bestLen, 260);
-                return new Candidate
+                var c = new Candidate
                 {
                     Type = Opcode.LongBlock,
                     Cover = len,
@@ -459,10 +464,10 @@ namespace Whiptools
                     Dist = bestDist,
                     Len = len
                 };
+                best = Better(best, c);
             }
 
-            // no block suitable
-            return default;
+            return best;
         }
 
         private static bool Verify(byte[] original, byte[] mangled)
