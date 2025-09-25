@@ -115,8 +115,8 @@ namespace Whiptools
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
 
-            var output = new List<byte>(input.Length / 2 + 16);
-            output.AddRange(BitConverter.GetBytes(input.Length)); // original length
+            var outlist = new List<byte>(input.Length / 2 + 16);
+            outlist.AddRange(BitConverter.GetBytes(input.Length)); // original length
 
             var literals = new List<byte>(64);
             int pos = 0;
@@ -124,24 +124,29 @@ namespace Whiptools
             while (pos < input.Length)
             {
                 // try repeat/diff
-                if (TryByteRepeat(input, pos, literals, output, ref pos)) continue;
-                if (TryWordRepeat(input, pos, literals, output, ref pos)) continue;
-                if (TryByteDiffSeq(input, pos, literals, output, ref pos)) continue;
-                if (TryWordDiffSeq(input, pos, literals, output, ref pos)) continue;
+                if (TryByteRepeat(input, pos, literals, outlist, ref pos)) continue;
+                if (TryWordRepeat(input, pos, literals, outlist, ref pos)) continue;
+                if (TryByteDiffSeq(input, pos, literals, outlist, ref pos)) continue;
+                if (TryWordDiffSeq(input, pos, literals, outlist, ref pos)) continue;
 
                 // try block copy
-                if (TryBlockCopy(input, pos, literals, output, ref pos)) continue;
+                if (TryBlockCopy(input, pos, literals, outlist, ref pos)) continue;
 
                 // otherwise literal
                 literals.Add(input[pos]);
                 pos++;
                 if (literals.Count == 63)
-                    FlushLiterals(literals, output);
+                    FlushLiterals(literals, outlist);
             }
-            FlushLiterals(literals, output);
-
-            output.Add((byte)0x00); // terminate with zero
-            return output.ToArray();
+            
+            FlushLiterals(literals, outlist);
+            outlist.Add((byte)0x00); // terminate with zero
+            
+            byte[] output = outlist.ToArray();
+            if (Verify(input, output)) // verify output
+                return output;
+            else
+                throw new ArgumentNullException(nameof(output));
         }
 
         // literal (0x01 to 0x3F)
@@ -347,6 +352,15 @@ namespace Whiptools
             output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
             output.Add((byte)(off & 0xFF));
             output.Add((byte)(length - 5));
+        }
+        private static bool Verify(byte[] original, byte[] mangled)
+        {
+            byte[] unmangled = Unmangler.Unmangle(mangled);
+            if (original == null || unmangled == null) return false;
+            if (original.Length != unmangled.Length) return false;
+            for (int i = 0; i < original.Length; i++)
+                if (original[i] != unmangled[i]) return false;
+            return true;
         }
     }
 
