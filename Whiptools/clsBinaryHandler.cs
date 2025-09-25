@@ -8,6 +8,7 @@ namespace Whiptools
         public static byte[] Unmangle(byte[] input)
         {
             int outLength = BitConverter.ToInt32(input, 0); // output length is first 4 bytes of input
+            if (outLength > 100000000) throw new ArgumentNullException(nameof(input));
             var output = new byte[outLength];
 
             // start positions
