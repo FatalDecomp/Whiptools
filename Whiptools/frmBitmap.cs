@@ -34,8 +34,7 @@ namespace Whiptools
                 Title = "Save As"
             })
             {
-                if (saveDialog.ShowDialog() != DialogResult.OK)
-                    return;
+                if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
                 using (var bitmap = new Bitmap(pictureBox.Image))
                 {

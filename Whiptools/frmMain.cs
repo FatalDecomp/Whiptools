@@ -76,16 +76,14 @@ namespace Whiptools
                 Multiselect = true
             })
             {
-                if (openDialog.ShowDialog() != DialogResult.OK)
-                    return;
+                if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                 using (var folderDialog = new FolderBrowserDialog
                 {
                     Description = $"Save {MangleType(unmangle).ToLower()}d files in:"
                 })
                 {
-                    if (folderDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
                     int countSucc = 0;
                     int countFail = 0;
@@ -168,16 +166,14 @@ namespace Whiptools
                     Multiselect = true
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
                     
                     using (var folderDialog = new FolderBrowserDialog
                     {
                         Description = "Save RAW files in:"
                     })
                     {
-                        if (folderDialog.ShowDialog() != DialogResult.OK)
-                            return;
+                        if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
                         string outputfile = "";
                         foreach (String filename in openDialog.FileNames)
@@ -225,8 +221,7 @@ namespace Whiptools
                     Multiselect = false
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     string filename = openDialog.FileName;
                     byte[] rawData = File.ReadAllBytes(filename);
@@ -239,8 +234,7 @@ namespace Whiptools
                         Title = $"Save Decoded {IniFilename} As"
                     })
                     {
-                        if (saveDialog.ShowDialog() != DialogResult.OK)
-                            return;
+                        if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
                         string savefile = saveDialog.FileName;
                         File.WriteAllBytes(savefile, decodedData);
@@ -269,16 +263,14 @@ namespace Whiptools
                     Multiselect = true
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     using (var folderDialog = new FolderBrowserDialog
                     {
                         Description = "Save WAV files in:"
                     })
                     {
-                        if (folderDialog.ShowDialog() != DialogResult.OK)
-                            return;
+                        if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
                         string outputfile = "";
                         foreach (String filename in openDialog.FileNames)
@@ -314,16 +306,14 @@ namespace Whiptools
                 Multiselect = true
             })
             {
-                if (openDialog.ShowDialog() != DialogResult.OK)
-                    return;
+                if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                 using (var folderDialog = new FolderBrowserDialog
                 {
                     Description = "Save revised HMP files in:"
                 })
                 {
-                    if (folderDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
                     int countSucc = 0;
                     int countFail = 0;
@@ -379,8 +369,7 @@ namespace Whiptools
                     Title = "Select Bitmap File"
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     string filename = openDialog.FileName;
                     bitmapData = File.ReadAllBytes(filename);
@@ -436,8 +425,7 @@ namespace Whiptools
                     Title = "Select Palette File"
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     string filename = openDialog.FileName;
                     paletteData = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(filename));
@@ -465,8 +453,7 @@ namespace Whiptools
                     Title = "Export Palette"
                 })
                 {
-                    if (saveDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
                     using (var bitmap = Bitmapper.ConvertPaletteToBitmap(paletteData))
                     {
@@ -533,8 +520,7 @@ namespace Whiptools
                     Title = "Select Image File"
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     newBitmapName = openDialog.FileName;
                     using (var bitmap = new Bitmap(newBitmapName))
@@ -572,8 +558,7 @@ namespace Whiptools
                 FileName = Path.GetFileNameWithoutExtension(defaultFileName)
             })
             {
-                if (saveDialog.ShowDialog() != DialogResult.OK)
-                    return;
+                if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
                 string filename = saveDialog.FileName;
                 File.WriteAllBytes(filename, Bitmapper.GetPaletteArray(palette));
@@ -603,8 +588,7 @@ namespace Whiptools
                     Title = "Select Palette File"
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     string filename = openDialog.FileName;
                     Color[] inputPalette = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(filename));
@@ -640,8 +624,7 @@ namespace Whiptools
                     Title = "Select Palette File"
                 })
                 {
-                    if (openDialog.ShowDialog() != DialogResult.OK)
-                        return;
+                    if (openDialog.ShowDialog() != DialogResult.OK) return;
 
                     Color[] palette = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(openDialog.FileName));
                     byte[] outputArray;
@@ -662,8 +645,7 @@ namespace Whiptools
                         Title = "Save Bitmap As"
                     })
                     {
-                        if (saveDialog.ShowDialog() != DialogResult.OK)
-                            return;
+                        if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
                         string savefile = saveDialog.FileName;
                         File.WriteAllBytes(savefile, outputArray);
