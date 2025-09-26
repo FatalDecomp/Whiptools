@@ -85,8 +85,8 @@ namespace Whiptools
                 {
                     if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
-                    int countSucc = 0;
-                    int countFail = 0;
+                    int countSucc = 0, countFail = 0;
+                    int inputSize = 0, outputSize = 0;
                     string displayoutputfile = ""; // for msgbox only
                     int firstFileSet = 0;
                     var filelist = openDialog.FileNames
@@ -110,6 +110,8 @@ namespace Whiptools
                                     (unmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
                                 File.WriteAllBytes(outputfile, outputData);
                                 Interlocked.Increment(ref countSucc);
+                                Interlocked.Add(ref inputSize, inputData.Length);
+                                Interlocked.Add(ref outputSize, outputData.Length);
                                 if (Interlocked.CompareExchange(ref firstFileSet, 1, 0) == 0)
                                     displayoutputfile = outputfile;
                             }
@@ -138,12 +140,15 @@ namespace Whiptools
                             msg += (countSucc > 0 ? "\n\n" : "") +
                                 $"Failed to {MangleType(unmangle).ToLower()} {countFail} file(s)!";
                     }
+                    msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
+                    if (countSucc > 0)
+                        if (outputSize > 0)
+                            msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
+
                     if (countFail > 0)
-                        MessageBox.Show(msg, $"FATALITY! ({sw.Elapsed.TotalSeconds:F3}s)",
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(msg, "FATALITY!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     else
-                        MessageBox.Show(msg, $"RACE OVER ({sw.Elapsed.TotalSeconds:F3}s)",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
