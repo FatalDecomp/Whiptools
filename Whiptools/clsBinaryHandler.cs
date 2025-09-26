@@ -8,7 +8,7 @@ namespace Whiptools
         public static byte[] Unmangle(byte[] input)
         {
             int outLength = BitConverter.ToInt32(input, 0); // output length is first 4 bytes of input
-            if (outLength > 100000000) throw new ArgumentNullException(nameof(input));
+            if (outLength > 100000000) throw new OutOfMemoryException(nameof(input));
             var output = new byte[outLength];
 
             // start positions
@@ -24,7 +24,7 @@ namespace Whiptools
                 else if (ctrl <= 0x3F) // 0x01..0x3F: literal copy from input
                 {
                     if (inPos + 1 + ctrl > input.Length || outPos + ctrl > outLength)
-                        throw new Exception();
+                        throw new IndexOutOfRangeException();
                     Array.Copy(input, inPos + 1, output, outPos, ctrl);
                     inPos += ctrl + 1;
                     outPos += ctrl;
@@ -112,14 +112,9 @@ namespace Whiptools
     {
         private enum Opcode
         {
-            None = 0,
-            ByteDiff,    // 0x40..0x4F
-            WordDiff,    // 0x50..0x5F
-            ByteRepeat,  // 0x60..0x6F
-            WordRepeat,  // 0x70..0x7F
-            ShortBlock,  // 0x80..0xBF
-            MediumBlock, // 0xC0..0xDF
-            LongBlock,   // 0xE0..0xFF
+            None = 0, ByteDiff, WordDiff,
+            ByteRepeat, WordRepeat,
+            ShortBlock, MediumBlock, LongBlock
         }
 
         private struct Candidate
@@ -135,6 +130,7 @@ namespace Whiptools
         public static byte[] Mangle(byte[] input)
         {
             if (input == null) throw new ArgumentNullException(nameof(input));
+            if (input.Length > 100000000) throw new OutOfMemoryException(nameof(input));
 
             var outlist = new List<byte>(input.Length / 2 + 16);
             outlist.AddRange(BitConverter.GetBytes(input.Length)); // original length
@@ -157,10 +153,13 @@ namespace Whiptools
                 Candidate bestNext = (pos + 1 < input.Length) ?
                     ChooseBest(input, pos + 1) : default;
 
-                // take literal only when it clearly helps compression (worst case cost = 2)
+                // incremental cost
+                int laLitCost = (literals.Count % 63 == 0) ? 2 : 1;
+
+                // take literal only when it helps compression
                 double nowRatio = (double)bestNow.Cost / (double)bestNow.Cover;
                 double laRatio = (bestNext.IsValid) ?
-                    (double)(2 + bestNext.Cost) / (double)(1 + bestNext.Cover) :
+                    (double)(laLitCost + bestNext.Cost) / (double)(1 + bestNext.Cover) :
                     double.MaxValue;
 
                 if (laRatio < nowRatio)
