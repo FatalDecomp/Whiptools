@@ -140,11 +140,13 @@ namespace Whiptools
                             msg += (countSucc > 0 ? "\n\n" : "") +
                                 $"Failed to {MangleType(unmangle).ToLower()} {countFail} file(s)!";
                     }
-                    msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
-                    if (countSucc > 0)
-                        if (outputSize > 0)
-                            msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
-
+                    if (!unmangle)
+                    {
+                        msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
+                        if (countSucc > 0)
+                            if (outputSize > 0)
+                                msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
+                    }
                     if (countFail > 0)
                         MessageBox.Show(msg, "FATALITY!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     else
