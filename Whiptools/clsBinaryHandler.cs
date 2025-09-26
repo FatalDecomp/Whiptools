@@ -8,7 +8,7 @@ namespace Whiptools
         public static byte[] Unmangle(byte[] input)
         {
             int outLength = BitConverter.ToInt32(input, 0); // output length is first 4 bytes of input
-            if (outLength > 100000000) throw new OutOfMemoryException(nameof(input));
+            if (outLength > 100000000) throw new OutOfMemoryException();
             var output = new byte[outLength];
 
             // start positions
@@ -129,8 +129,8 @@ namespace Whiptools
 
         public static byte[] Mangle(byte[] input)
         {
-            if (input == null) throw new ArgumentNullException(nameof(input));
-            if (input.Length > 100000000) throw new OutOfMemoryException(nameof(input));
+            if (input == null) throw new ArgumentNullException();
+            if (input.Length > 100000000) throw new OutOfMemoryException();
 
             var outlist = new List<byte>(input.Length / 2 + 16);
             outlist.AddRange(BitConverter.GetBytes(input.Length)); // original length
@@ -182,7 +182,7 @@ namespace Whiptools
             if (Verify(input, output)) // verify output
                 return output;
             else
-                throw new ArgumentNullException(nameof(output));
+                throw new InvalidOperationException();
         }
 
         private static Candidate ChooseBest(byte[] input, int pos)

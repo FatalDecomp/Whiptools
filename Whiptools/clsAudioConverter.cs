@@ -93,25 +93,21 @@ namespace Whiptools
             }
             else
             {
-                throw new Exception();
+                throw new FormatException();
             }
         }
 
         private static bool CheckOriginalFormat(byte[] inputData)
         {
             // check length
-            if (inputData.Length < chunkStartOrig)
-                return false;
+            if (inputData.Length < chunkStartOrig) return false;
 
             // check input starts with original padded header
             var paddedBytes = new byte[headerLength];
             var prefixBytes = Encoding.ASCII.GetBytes(headerOrig);
             Array.Copy(prefixBytes, 0, paddedBytes, 0, prefixBytes.Length);
             for (int i = 0; i < headerLength; i++)
-            {
-                if (inputData[i] != paddedBytes[i])
-                    return false;
-            }
+                if (inputData[i] != paddedBytes[i]) return false;
 
             return true;
         }

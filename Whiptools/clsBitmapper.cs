@@ -10,16 +10,11 @@ namespace Whiptools
     {
         public static Color[] ConvertRGBToPalette(byte[] inputArray)
         {
-            if (inputArray.Length %3 != 0)
-                throw new Exception();
+            if (inputArray.Length % 3 != 0) throw new ArgumentException();
             Color[] output = new Color[inputArray.Length / 3];
             for (int i = 0; i < output.Length; i++)
-            {
-                output[i] = Color.FromArgb(
-                    inputArray[i * 3],
-                    inputArray[i * 3 + 1],
-                    inputArray[i * 3 + 2]);
-            }
+                output[i] = Color.FromArgb(inputArray[i * 3],
+                    inputArray[i * 3 + 1], inputArray[i * 3 + 2]);
             return output;
         }
 
@@ -37,7 +32,7 @@ namespace Whiptools
             for (int i = 0; i < bitmapArray.Length; i++)
             {
                 if (bitmapArray[i] >= palette.Length)
-                    throw new Exception();
+                    throw new ArgumentOutOfRangeException();
                 output[i * 3] = palette[bitmapArray[i]].B;
                 output[i * 3 + 1] = palette[bitmapArray[i]].G;
                 output[i * 3 + 2] = palette[bitmapArray[i]].R;
@@ -116,7 +111,7 @@ namespace Whiptools
                             if (paletteDict.TryGetValue(colorLow, out byte paletteIndex))
                                 output[y * width + x] = paletteIndex;
                             else
-                                throw new Exception();
+                                throw new KeyNotFoundException();
                         }
                     }
                 }
@@ -145,6 +140,7 @@ namespace Whiptools
                 GetIntHigh(input.G),
                 GetIntHigh(input.B));
         }
+
         private static Color GetColorLow(Color input)
         {
             return Color.FromArgb(

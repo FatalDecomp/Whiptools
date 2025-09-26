@@ -478,7 +478,7 @@ namespace Whiptools
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 break;
                             default:
-                                throw new Exception();
+                                throw new NotSupportedException();
                         }
                     }
                 }
@@ -605,8 +605,7 @@ namespace Whiptools
                     string userInput = Microsoft.VisualBasic.Interaction.InputBox(
                         $"Add at position (0-{maxOffset.ToString()}):", "Add to Palette", "0");
                     int offset = Convert.ToInt32(userInput);
-                    if (offset < 0 || offset > maxOffset)
-                        throw new Exception();
+                    if (offset < 0 || offset > maxOffset) throw new ArgumentOutOfRangeException();
 
                     int newLength = Math.Max(inputPalette.Length, offset + newPalette.Length);
                     Color[] outputPalette = new Color[newLength];
