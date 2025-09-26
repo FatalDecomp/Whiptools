@@ -154,13 +154,14 @@ namespace Whiptools
                 }
 
                 // one literal + best at next pos
-                Candidate bestNext = (pos + 1 < input.Length) ? ChooseBest(input, pos + 1) : default;
+                Candidate bestNext = (pos + 1 < input.Length) ?
+                    ChooseBest(input, pos + 1) : default;
 
                 // take literal only when it clearly helps compression (worst case cost = 2)
                 double nowRatio = (double)bestNow.Cost / (double)bestNow.Cover;
-                double laRatio = (bestNext.IsValid)
-                    ? (double)(2 + bestNext.Cost) / (double)(1 + bestNext.Cover)
-                    : double.MaxValue;
+                double laRatio = (bestNext.IsValid) ?
+                    (double)(2 + bestNext.Cost) / (double)(1 + bestNext.Cover) :
+                    double.MaxValue;
 
                 if (laRatio < nowRatio)
                 {
@@ -372,7 +373,8 @@ namespace Whiptools
             int max = 17;
             while (len < max && pos + 2 * len + 1 < input.Length)
             {
-                if (input[pos + 2 * len] != b0 || input[pos + 2 * len + 1] != b1) break;
+                if (input[pos + 2 * len] != b0 ||
+                    input[pos + 2 * len + 1] != b1) break;
                 len++;
             }
             if (len < 2) return default;
@@ -401,41 +403,41 @@ namespace Whiptools
                 while (m < maxMatch && input[s + m] == input[pos + m]) m++;
                 if (m < 3) continue;
 
-            // short: offset 3..66, len 3, cost 1
+                // short: offset 3..66, len 3, cost 1
                 if (dist <= 66 && m >= 3)
-            {
-                var c = new Candidate
                 {
-                    Type = Opcode.ShortBlock,
+                    var c = new Candidate
+                    {
+                        Type = Opcode.ShortBlock,
                         Cover = 3, Cost = 1,
                         Dist = dist, Len = 3
-                };
+                    };
                     bestShort = Better(bestShort, c);
-            }
+                }
 
-            // medium: offset 3..1026, len 4..11, cost 2
+                // medium: offset 3..1026, len 4..11, cost 2
                 if (dist <= 1026 && m >= 4)
-            {
-                    int len = Math.Min(m, 11);
-                var c = new Candidate
                 {
-                    Type = Opcode.MediumBlock,
+                    int len = Math.Min(m, 11);
+                    var c = new Candidate
+                    {
+                        Type = Opcode.MediumBlock,
                         Cover = len, Cost = 2,
                         Dist = dist, Len = len
-                };
+                    };
                     bestMedium = Better(bestMedium, c);
-            }
+                }
 
                 // long: offset 3..8194, len 5..260, cost 3
                 if (dist <= 8194 && m >= 5)
-            {
-                    int len = Math.Min(m, 260);
-                var c = new Candidate
                 {
-                    Type = Opcode.LongBlock,
+                    int len = Math.Min(m, 260);
+                    var c = new Candidate
+                    {
+                        Type = Opcode.LongBlock,
                         Cover = len, Cost = 3,
                         Dist = dist, Len = len
-                };
+                    };
                     bestLong = Better(bestLong, c);
                     if (bestLong.Cover == 260) break; // max
                 }

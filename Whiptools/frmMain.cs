@@ -503,8 +503,10 @@ namespace Whiptools
                 frmBitmap.pictureBox.Image = Bitmapper.CreateBitmapFromRGB(bitmapWidth, bitmapHeight, rgbData);
                 frmBitmap.pictureBox.Location = new Point(0, 0);
                 frmBitmap.pictureBox.Size = new Size(bitmapWidth, bitmapHeight);
-                frmBitmap.Width = Math.Max(320, Math.Min(bitmapWidth, Convert.ToInt32(Screen.PrimaryScreen.Bounds.Width * 0.95))) + 16;
-                frmBitmap.Height = Math.Min(bitmapHeight, Convert.ToInt32(Screen.PrimaryScreen.Bounds.Height * 0.95)) + 39;
+                frmBitmap.Width = Math.Max(320, Math.Min(bitmapWidth,
+                    Convert.ToInt32(Screen.PrimaryScreen.Bounds.Width * 0.95))) + 16;
+                frmBitmap.Height = Math.Min(bitmapHeight,
+                    Convert.ToInt32(Screen.PrimaryScreen.Bounds.Height * 0.95)) + 39;
                 frmBitmap.Text = $"{bitmapName} | {paletteName} | {bitmapWidth} x {bitmapHeight} | Click on image to save";
                 frmBitmap.filename = Path.GetFileNameWithoutExtension(bitmapName);
                 frmBitmap.Show();
@@ -656,7 +658,8 @@ namespace Whiptools
 
                         string savefile = saveDialog.FileName;
                         File.WriteAllBytes(savefile, outputArray);
-                        MessageBox.Show($"Saved {savefile}", "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"Saved {savefile}", "RACE OVER",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }
