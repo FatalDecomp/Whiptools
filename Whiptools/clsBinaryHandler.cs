@@ -145,9 +145,8 @@ namespace Whiptools
             while (pos < input.Length)
             {
                 Candidate bestNow = ChooseBest(input, pos);
-                if (!bestNow.IsValid)
+                if (!bestNow.IsValid) // no non-literal candidate
                 {
-                    // no non-literal token fits: collect literal
                     literals.Add(input[pos]);
                     pos++;
                     if (literals.Count == 63) FlushLiterals(literals, outlist);
@@ -214,8 +213,10 @@ namespace Whiptools
             if (a.Cover > b.Cover) return a;
 
             // tie-breaker: prefer block over diff/repeat
-            bool aIsBlock = a.Type == Opcode.ShortBlock || a.Type == Opcode.MediumBlock || a.Type == Opcode.LongBlock;
-            bool bIsBlock = b.Type == Opcode.ShortBlock || b.Type == Opcode.MediumBlock || b.Type == Opcode.LongBlock;
+            bool aIsBlock = a.Type == Opcode.ShortBlock ||
+                a.Type == Opcode.MediumBlock || a.Type == Opcode.LongBlock;
+            bool bIsBlock = b.Type == Opcode.ShortBlock ||
+                b.Type == Opcode.MediumBlock || b.Type == Opcode.LongBlock;
             if (bIsBlock && !aIsBlock) return b;
             if (aIsBlock && !bIsBlock) return a;
 
@@ -311,9 +312,7 @@ namespace Whiptools
             return new Candidate
             {
                 Type = Opcode.ByteDiff,
-                Cover = len,
-                Cost = 1,
-                Len = len
+                Cover = len, Cost = 1, Len = len
             };
         }
 
@@ -338,9 +337,7 @@ namespace Whiptools
             return new Candidate
             {
                 Type = Opcode.WordDiff,
-                Cover = len * 2,
-                Cost = 1,
-                Len = len
+                Cover = len * 2, Cost = 1, Len = len
             };
         }
         
@@ -359,9 +356,7 @@ namespace Whiptools
             return new Candidate
             {
                 Type = Opcode.ByteRepeat,
-                Cover = len,
-                Cost = 1,
-                Len = len
+                Cover = len, Cost = 1, Len = len
             };
         }
 
@@ -385,88 +380,71 @@ namespace Whiptools
             return new Candidate
             {
                 Type = Opcode.WordRepeat,
-                Cover = len * 2,
-                Cost = 1,
-                Len = len
+                Cover = len * 2, Cost = 1, Len = len
             };
         }
 
         private static Candidate TryBlock(byte[] input, int pos)
         {
-            int bestLen = 0;
-            int bestDist = 0;
+            Candidate bestShort = default,
+                bestMedium = default, bestLong = default;
+
             int maxSearch = Math.Min(pos, 8194);
             int maxMatch = Math.Min(input.Length - pos, 260);
 
             for (int dist = 3; dist <= maxSearch; dist++)
             {
                 int s = pos - dist;
-
-                // quick reject: 2 bytes if possible, otherwise 1 byte
-                if (pos + 1 < input.Length && s + 1 < input.Length)
-                    if (input[s] != input[pos] || input[s + 1] != input[pos + 1]) continue;
-                else
-                    if (input[s] != input[pos]) continue;
+                if (input[s] != input[pos]) continue; // quick reject
 
                 int m = 0;
                 while (m < maxMatch && input[s + m] == input[pos + m]) m++;
-
-                if (m > bestLen)
-                {
-                    bestLen = m;
-                    bestDist = dist;
-
-                    // early exit: can't encode longer than 260
-                    if (bestLen == 260) break;
-                }
-            }
-
-            Candidate best = default;
+                if (m < 3) continue;
 
             // short: offset 3..66, len 3, cost 1
-            if (bestDist <= 66 && bestLen >= 3)
+                if (dist <= 66 && m >= 3)
             {
                 var c = new Candidate
                 {
                     Type = Opcode.ShortBlock,
-                    Cover = 3,
-                    Cost = 1,
-                    Dist = bestDist,
-                    Len = 3
+                        Cover = 3, Cost = 1,
+                        Dist = dist, Len = 3
                 };
-                best = Better(best, c);
+                    bestShort = Better(bestShort, c);
             }
 
             // medium: offset 3..1026, len 4..11, cost 2
-            if (bestDist <= 1026 && bestLen >= 4)
+                if (dist <= 1026 && m >= 4)
             {
-                int len = Math.Min(bestLen, 11);
+                    int len = Math.Min(m, 11);
                 var c = new Candidate
                 {
                     Type = Opcode.MediumBlock,
-                    Cover = len,
-                    Cost = 2,
-                    Dist = bestDist,
-                    Len = len
+                        Cover = len, Cost = 2,
+                        Dist = dist, Len = len
                 };
-                best = Better(best, c);
+                    bestMedium = Better(bestMedium, c);
             }
 
-            // long: len 5..260, dist 3..8194, cost 3
-            if (bestDist <= 8194 && bestLen >= 5)
+                // long: offset 3..8194, len 5..260, cost 3
+                if (dist <= 8194 && m >= 5)
             {
-                int len = Math.Min(bestLen, 260);
+                    int len = Math.Min(m, 260);
                 var c = new Candidate
                 {
                     Type = Opcode.LongBlock,
-                    Cover = len,
-                    Cost = 3,
-                    Dist = bestDist,
-                    Len = len
+                        Cover = len, Cost = 3,
+                        Dist = dist, Len = len
                 };
-                best = Better(best, c);
+                    bestLong = Better(bestLong, c);
+                    if (bestLong.Cover == 260) break; // max
+                }
             }
 
+            Candidate best = default;
+            best = Better(best, bestShort);
+            best = Better(best, bestMedium);
+            best = Better(best, bestLong);
             return best;
         }
 
