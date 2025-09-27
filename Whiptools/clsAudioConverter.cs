@@ -4,13 +4,13 @@ using System.Text;
 
 namespace Whiptools
 {
-    class WavAudio
+    public static class WavAudio
     {
-        private const int sampleRate = 11025;
-        private const short bitDepth = 8;
-
         public static byte[] ConvertRawToWav(byte[] rawBytes)
         {
+            const int sampleRate = 11025;
+            const short bitDepth = 8;
+
             using (var outputStream = new MemoryStream())
             {
                 WriteWavHeader(outputStream, rawBytes.Length, sampleRate, bitDepth);
@@ -43,13 +43,13 @@ namespace Whiptools
             WriteInt32(stream, dataLength); // Subchunk2Size
         }
 
-        static void WriteInt16(Stream stream, short value)
+        private static void WriteInt16(Stream stream, short value)
         {
             stream.WriteByte((byte)(value & 0xFF));
             stream.WriteByte((byte)((value >> 8) & 0xFF));
         }
 
-        static void WriteInt32(Stream stream, int value)
+        private static void WriteInt32(Stream stream, int value)
         {
             stream.WriteByte((byte)(value & 0xFF));
             stream.WriteByte((byte)((value >> 8) & 0xFF));
@@ -57,14 +57,14 @@ namespace Whiptools
             stream.WriteByte((byte)((value >> 24) & 0xFF));
         }
 
-        static void WriteString(Stream stream, string value)
+        private static void WriteString(Stream stream, string value)
         {
             var bytes = Encoding.ASCII.GetBytes(value);
             stream.Write(bytes, 0, bytes.Length);
         }
     }
 
-    class HMPMIDI
+    public static class HMPMIDI
     {
         private const string headerOrig     = "HMIMIDIP";
         private const string headerRevised  = "HMIMIDIP013195";

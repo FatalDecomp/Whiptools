@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Whiptools
 {
-    class Unmangler
+    public static class Unmangler
     {
         public static byte[] Unmangle(byte[] input)
         {
@@ -109,7 +109,7 @@ namespace Whiptools
         }
     }
 
-    class Mangler
+    public static class Mangler
     {
         private enum Opcode
         {
@@ -453,7 +453,7 @@ namespace Whiptools
         }
     }
 
-    class FibCipher
+    public static class FibCipher
     {
         public static byte[] Decode(byte[] inputData, int a0, int a1)
         {

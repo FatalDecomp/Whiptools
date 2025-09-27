@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Whiptools
 {
-    class Bitmapper
+    public static class Bitmapper
     {
         public static Color[] ConvertRGBToPalette(byte[] inputArray)
         {
