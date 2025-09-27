@@ -100,7 +100,7 @@ namespace Whiptools
             this.btnExportPalette.TabIndex = 5;
             this.btnExportPalette.Text = "Export Palette";
             this.btnExportPalette.UseVisualStyleBackColor = true;
-            this.btnExportPalette.Click += new System.EventHandler(this.btnExportPalette_Click);
+            this.btnExportPalette.Click += new System.EventHandler(this.BtnExportPalette_Click);
             // 
             // lblDimHeight
             // 
@@ -117,7 +117,7 @@ namespace Whiptools
             this.txtDimWidth.Name = "txtDimWidth";
             this.txtDimWidth.Size = new System.Drawing.Size(41, 20);
             this.txtDimWidth.TabIndex = 2;
-            this.txtDimWidth.TextChanged += new System.EventHandler(this.txtDimWidth_TextChanged);
+            this.txtDimWidth.TextChanged += new System.EventHandler(this.TxtDimWidth_TextChanged);
             // 
             // txtPalettePath
             // 
@@ -188,7 +188,7 @@ namespace Whiptools
             this.btnLoadPalette.TabIndex = 4;
             this.btnLoadPalette.Text = "Load Palette";
             this.btnLoadPalette.UseVisualStyleBackColor = true;
-            this.btnLoadPalette.Click += new System.EventHandler(this.btnLoadPalette_Click);
+            this.btnLoadPalette.Click += new System.EventHandler(this.BtnLoadPalette_Click);
             // 
             // btnLoadBitmap
             // 
@@ -198,7 +198,7 @@ namespace Whiptools
             this.btnLoadBitmap.TabIndex = 1;
             this.btnLoadBitmap.Text = "Load Bitmap";
             this.btnLoadBitmap.UseVisualStyleBackColor = true;
-            this.btnLoadBitmap.Click += new System.EventHandler(this.btnLoadBitmap_Click);
+            this.btnLoadBitmap.Click += new System.EventHandler(this.BtnLoadBitmap_Click);
             // 
             // btnViewBitmal
             // 
@@ -208,7 +208,7 @@ namespace Whiptools
             this.btnViewBitmal.TabIndex = 6;
             this.btnViewBitmal.Text = "View Image";
             this.btnViewBitmal.UseVisualStyleBackColor = true;
-            this.btnViewBitmal.Click += new System.EventHandler(this.btnViewBitmap_Click);
+            this.btnViewBitmal.Click += new System.EventHandler(this.BtnViewBitmap_Click);
             // 
             // groupBox2
             // 
@@ -236,7 +236,7 @@ namespace Whiptools
             this.btnAddToPalette.TabIndex = 3;
             this.btnAddToPalette.Text = "Add to Existing";
             this.btnAddToPalette.UseVisualStyleBackColor = true;
-            this.btnAddToPalette.Click += new System.EventHandler(this.btnAddToExistingPalette_Click);
+            this.btnAddToPalette.Click += new System.EventHandler(this.BtnAddToExistingPalette_Click);
             // 
             // btnSavePalette
             // 
@@ -246,7 +246,7 @@ namespace Whiptools
             this.btnSavePalette.TabIndex = 2;
             this.btnSavePalette.Text = "Save New Palette";
             this.btnSavePalette.UseVisualStyleBackColor = true;
-            this.btnSavePalette.Click += new System.EventHandler(this.btnSaveNewPalette_Click);
+            this.btnSavePalette.Click += new System.EventHandler(this.BtnSaveNewPalette_Click);
             // 
             // lblImageLoaded
             // 
@@ -282,7 +282,7 @@ namespace Whiptools
             this.btnLoadImage.TabIndex = 1;
             this.btnLoadImage.Text = "Load Image";
             this.btnLoadImage.UseVisualStyleBackColor = true;
-            this.btnLoadImage.Click += new System.EventHandler(this.btnLoadImage_Click);
+            this.btnLoadImage.Click += new System.EventHandler(this.BtnLoadImage_Click);
             // 
             // btnSaveBMFile
             // 
@@ -292,7 +292,7 @@ namespace Whiptools
             this.btnSaveBMFile.TabIndex = 4;
             this.btnSaveBMFile.Text = "Select Palette and Save BM File";
             this.btnSaveBMFile.UseVisualStyleBackColor = true;
-            this.btnSaveBMFile.Click += new System.EventHandler(this.btnSaveBMFile_Click);
+            this.btnSaveBMFile.Click += new System.EventHandler(this.BtnSaveBMFile_Click);
             // 
             // groupBox3
             // 
@@ -313,7 +313,7 @@ namespace Whiptools
             this.btnMangle.TabIndex = 1;
             this.btnMangle.Text = "Mangle Files";
             this.btnMangle.UseVisualStyleBackColor = true;
-            this.btnMangle.Click += new System.EventHandler(this.btnMangleFiles_Click);
+            this.btnMangle.Click += new System.EventHandler(this.BtnMangleFiles_Click);
             // 
             // btnUnmangle
             // 
@@ -323,7 +323,7 @@ namespace Whiptools
             this.btnUnmangle.TabIndex = 0;
             this.btnUnmangle.Text = "Unmangle Files";
             this.btnUnmangle.UseVisualStyleBackColor = true;
-            this.btnUnmangle.Click += new System.EventHandler(this.btnUnmangleFiles_Click);
+            this.btnUnmangle.Click += new System.EventHandler(this.BtnUnmangleFiles_Click);
             // 
             // groupBox5
             // 
@@ -344,7 +344,7 @@ namespace Whiptools
             this.btnConvertHMPMIDI.TabIndex = 1;
             this.btnConvertHMPMIDI.Text = "Convert HMP MIDI Format";
             this.btnConvertHMPMIDI.UseVisualStyleBackColor = true;
-            this.btnConvertHMPMIDI.Click += new System.EventHandler(this.btnConvertHMPMIDI_Click);
+            this.btnConvertHMPMIDI.Click += new System.EventHandler(this.BtnConvertHMPMIDI_Click);
             // 
             // btnConvertRAWAudio
             // 
@@ -354,7 +354,7 @@ namespace Whiptools
             this.btnConvertRAWAudio.TabIndex = 0;
             this.btnConvertRAWAudio.Text = "Convert Raw Audio to WAV";
             this.btnConvertRAWAudio.UseVisualStyleBackColor = true;
-            this.btnConvertRAWAudio.Click += new System.EventHandler(this.btnConvertRAWAudio_Click);
+            this.btnConvertRAWAudio.Click += new System.EventHandler(this.BtnConvertRAWAudio_Click);
             // 
             // groupBox4
             // 
@@ -376,7 +376,7 @@ namespace Whiptools
             this.btnDecodePasswordIni.TabIndex = 2;
             this.btnDecodePasswordIni.Text = "Decode PASSWORD.INI";
             this.btnDecodePasswordIni.UseVisualStyleBackColor = true;
-            this.btnDecodePasswordIni.Click += new System.EventHandler(this.btnDecodePasswordIni_Click);
+            this.btnDecodePasswordIni.Click += new System.EventHandler(this.BtnDecodePasswordIni_Click);
             // 
             // btnDecodeFatalIni
             // 
@@ -386,7 +386,7 @@ namespace Whiptools
             this.btnDecodeFatalIni.TabIndex = 1;
             this.btnDecodeFatalIni.Text = "Decode FATAL.INI";
             this.btnDecodeFatalIni.UseVisualStyleBackColor = true;
-            this.btnDecodeFatalIni.Click += new System.EventHandler(this.btnDecodeFatalIni_Click);
+            this.btnDecodeFatalIni.Click += new System.EventHandler(this.BtnDecodeFatalIni_Click);
             // 
             // btnDecodeCheatAudio
             // 
@@ -396,7 +396,7 @@ namespace Whiptools
             this.btnDecodeCheatAudio.TabIndex = 0;
             this.btnDecodeCheatAudio.Text = "Decode Cheat Audio";
             this.btnDecodeCheatAudio.UseVisualStyleBackColor = true;
-            this.btnDecodeCheatAudio.Click += new System.EventHandler(this.btnDecodeCheatAudio_Click);
+            this.btnDecodeCheatAudio.Click += new System.EventHandler(this.BtnDecodeCheatAudio_Click);
             // 
             // frmMain
             // 
@@ -413,7 +413,7 @@ namespace Whiptools
             this.MaximizeBox = false;
             this.Name = "frmMain";
             this.Text = "Whiptools";
-            this.Load += new System.EventHandler(this.frmMain_Load);
+            this.Load += new System.EventHandler(this.FrmMain_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);

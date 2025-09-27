@@ -1,6 +1,6 @@
 ﻿namespace Whiptools
 {
-    partial class frmBitmap
+    partial class FrmBitmap
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmBitmap));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmBitmap));
             this.pictureBox = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.SuspendLayout();
@@ -40,7 +40,7 @@
             this.pictureBox.Size = new System.Drawing.Size(259, 170);
             this.pictureBox.TabIndex = 0;
             this.pictureBox.TabStop = false;
-            this.pictureBox.Click += new System.EventHandler(this.pictureBox_Click);
+            this.pictureBox.Click += new System.EventHandler(this.PictureBox_Click);
             // 
             // frmBitmap
             // 

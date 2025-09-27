@@ -16,7 +16,7 @@ namespace Whiptools
         private byte[] bitmapData;
         private Color[] paletteData;
         private string bitmapName, paletteName;
-        private frmBitmap frmBitmap;
+        private FrmBitmap frmBitmap;
 
         // bitmap creator
         private Bitmap newBitmap;
@@ -29,15 +29,15 @@ namespace Whiptools
         public frmMain()
         {
             InitializeComponent();
-            this.FormClosing += frmMain_FormClosing;
+            this.FormClosing += FrmMain_FormClosing;
         }
 
-        private void frmMain_Load(object sender, EventArgs e)
+        private void FrmMain_Load(object sender, EventArgs e)
         {
             // RUBBISH RACER
         }
 
-        private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
+        private void FrmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
             newBitmap?.Dispose();
             newBitmap = null;
@@ -56,12 +56,12 @@ namespace Whiptools
 
         // file unmangling
 
-        private void btnUnmangleFiles_Click(object sender, EventArgs e)
+        private void BtnUnmangleFiles_Click(object sender, EventArgs e)
         {
             FileMangling(true);
         }
 
-        private void btnMangleFiles_Click(object sender, EventArgs e)
+        private void BtnMangleFiles_Click(object sender, EventArgs e)
         {
             FileMangling(false);
         }
@@ -157,7 +157,7 @@ namespace Whiptools
 
         // file decoding
 
-        private void btnDecodeCheatAudio_Click(object sender, EventArgs e)
+        private void BtnDecodeCheatAudio_Click(object sender, EventArgs e)
         {
             try
             {
@@ -202,12 +202,12 @@ namespace Whiptools
             }
         }
 
-        private void btnDecodeFatalIni_Click(object sender, EventArgs e)
+        private void BtnDecodeFatalIni_Click(object sender, EventArgs e)
         {
             DecodeIniFile("FATAL.INI", 77, 101);
         }
 
-        private void btnDecodePasswordIni_Click(object sender, EventArgs e)
+        private void BtnDecodePasswordIni_Click(object sender, EventArgs e)
         {
             DecodeIniFile("PASSWORD.INI", 23, 37);
         }
@@ -253,7 +253,7 @@ namespace Whiptools
 
         // audio tools
 
-        private void btnConvertRAWAudio_Click(object sender, EventArgs e)
+        private void BtnConvertRAWAudio_Click(object sender, EventArgs e)
         {
             try
             {
@@ -299,7 +299,7 @@ namespace Whiptools
             }
         }
 
-        private void btnConvertHMPMIDI_Click(object sender, EventArgs e)
+        private void BtnConvertHMPMIDI_Click(object sender, EventArgs e)
         {
             using (var openDialog = new OpenFileDialog
             {
@@ -361,7 +361,7 @@ namespace Whiptools
 
         // bitmap viewer
 
-        private void btnLoadBitmap_Click(object sender, EventArgs e)
+        private void BtnLoadBitmap_Click(object sender, EventArgs e)
         {
             try
             {
@@ -403,7 +403,7 @@ namespace Whiptools
             }
         }
 
-        private void txtDimWidth_TextChanged(object sender, EventArgs e)
+        private void TxtDimWidth_TextChanged(object sender, EventArgs e)
         {
             try
             {
@@ -417,7 +417,7 @@ namespace Whiptools
             }
         }
 
-        private void btnLoadPalette_Click(object sender, EventArgs e)
+        private void BtnLoadPalette_Click(object sender, EventArgs e)
         {
             try
             {
@@ -443,7 +443,7 @@ namespace Whiptools
             }
         }
 
-        private void btnExportPalette_Click(object sender, EventArgs e)
+        private void BtnExportPalette_Click(object sender, EventArgs e)
         {
             try
             {
@@ -484,7 +484,7 @@ namespace Whiptools
             }
         }
 
-        private void btnViewBitmap_Click(object sender, EventArgs e)
+        private void BtnViewBitmap_Click(object sender, EventArgs e)
         {
             try
             {
@@ -494,7 +494,7 @@ namespace Whiptools
                 int bitmapHeight = Convert.ToInt32(Math.Ceiling(bitmapData.Length / (double)bitmapWidth));
 
                 DisposeBitmapForm();
-                frmBitmap = new frmBitmap();
+                frmBitmap = new FrmBitmap();
                 frmBitmap.pictureBox.Image = Bitmapper.CreateBitmapFromRGB(bitmapWidth, bitmapHeight, rgbData);
                 frmBitmap.pictureBox.Location = new Point(0, 0);
                 frmBitmap.pictureBox.Size = new Size(bitmapWidth, bitmapHeight);
@@ -514,7 +514,7 @@ namespace Whiptools
 
         // bitmap creator
 
-        private void btnLoadImage_Click(object sender, EventArgs e)
+        private void BtnLoadImage_Click(object sender, EventArgs e)
         {
             try
             {
@@ -570,7 +570,7 @@ namespace Whiptools
             }
         }
 
-        private void btnSaveNewPalette_Click(object sender, EventArgs e)
+        private void BtnSaveNewPalette_Click(object sender, EventArgs e)
         {
             try
             {
@@ -582,7 +582,7 @@ namespace Whiptools
             }
         }
 
-        private void btnAddToExistingPalette_Click(object sender, EventArgs e)
+        private void BtnAddToExistingPalette_Click(object sender, EventArgs e)
         {
             try
             {
@@ -594,11 +594,11 @@ namespace Whiptools
                 {
                     if (openDialog.ShowDialog() != DialogResult.OK) return;
 
-                    string filename = openDialog.FileName;
+                    string filename = openDialog.FileName; 
                     Color[] inputPalette = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(filename));
                     int maxOffset = 256 - newPalette.Length;
                     string userInput = Microsoft.VisualBasic.Interaction.InputBox(
-                        $"Add at position (0-{maxOffset.ToString()}):", "Add to Palette", "0");
+                        $"Add at position (0-{maxOffset}):", "Add to Palette", "0");
                     int offset = Convert.ToInt32(userInput);
                     if (offset < 0 || offset > maxOffset) throw new ArgumentOutOfRangeException();
 
@@ -617,7 +617,7 @@ namespace Whiptools
             }
         }
 
-        private void btnSaveBMFile_Click(object sender, EventArgs e)
+        private void BtnSaveBMFile_Click(object sender, EventArgs e)
         {
             try
             {

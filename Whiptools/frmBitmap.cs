@@ -6,17 +6,17 @@ using System.Windows.Forms;
 
 namespace Whiptools
 {
-    public partial class frmBitmap : Form
+    public partial class FrmBitmap : Form
     {
         public string filename;
 
-        public frmBitmap()
+        public FrmBitmap()
         {
             InitializeComponent();
-            this.FormClosing += frmBitmap_FormClosing;
+            this.FormClosing += FrmBitmap_FormClosing;
         }
 
-        private void frmBitmap_FormClosing(object sender, FormClosingEventArgs e)
+        private void FrmBitmap_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (pictureBox?.Image != null)
             {
@@ -25,7 +25,7 @@ namespace Whiptools
             }
         }
 
-        private void pictureBox_Click(object sender, EventArgs e)
+        private void PictureBox_Click(object sender, EventArgs e)
         {
             using (var saveDialog = new SaveFileDialog
             {
