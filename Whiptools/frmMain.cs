@@ -155,10 +155,8 @@ namespace Whiptools
             }
         }
 
-        public static string MangleType(bool isUnmangle)
-        {
-            return isUnmangle ? "Unmangle" : "Mangle";
-        }
+        public static string MangleType(bool isUnmangle) =>
+            isUnmangle ? "Unmangle" : "Mangle";
 
         // file decoding
 
@@ -537,16 +535,14 @@ namespace Whiptools
                         {
                             MessageBox.Show($"Too many colours! ({Convert.ToString(palette.Length)})",
                                 "YOU NEED MORE PRACTICE", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            return;
                         }
-                        else
-                        {
-                            newBitmap?.Dispose();
-                            newBitmap = (Bitmap)bitmap.Clone();
-                            newPalette = palette;
-                            txtImagePath.Text = newBitmapName;
-                            lblImageLoaded.Text = $"Loaded {newBitmap.Width} x " +
-                                $"{newBitmap.Height}, {newPalette.Length} colours";
-                        }
+                        newBitmap?.Dispose();
+                        newBitmap = (Bitmap)bitmap.Clone();
+                        newPalette = palette;
+                        txtImagePath.Text = newBitmapName;
+                        lblImageLoaded.Text = $"Loaded {newBitmap.Width} x " +
+                            $"{newBitmap.Height}, {newPalette.Length} colours";
                     }
                 }
             }

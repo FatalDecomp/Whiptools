@@ -93,18 +93,6 @@ namespace Whiptools
             return hashColors.ToArray();
         }
 
-        public static byte[] GetPaletteArray(Color[] palette)
-        {
-            byte[] output = new byte[palette.Length * 3];
-            for (int i = 0; i < palette.Length; i++)
-            {
-                output[i * 3] = (byte)(palette[i].R);
-                output[i * 3 + 1] = (byte)(palette[i].G);
-                output[i * 3 + 2] = (byte)(palette[i].B);
-            }
-            return output;
-        }
-
         public static byte[] GetBitmapArray(Bitmap bitmap, Color[] palette)
         {
             int width = bitmap.Width;
@@ -149,6 +137,18 @@ namespace Whiptools
             return output;
         }
 
+        public static byte[] GetPaletteArray(Color[] palette)
+        {
+            byte[] output = new byte[palette.Length * 3];
+            for (int i = 0; i < palette.Length; i++)
+            {
+                output[i * 3] = (byte)(palette[i].R);
+                output[i * 3 + 1] = (byte)(palette[i].G);
+                output[i * 3 + 2] = (byte)(palette[i].B);
+            }
+            return output;
+        }
+
         // utils
 
         private static byte[] GetByteArrayHigh(byte[] input)
@@ -159,21 +159,17 @@ namespace Whiptools
             return output;
         }
 
-        private static Color GetColorHigh(Color input)
-        {
-            return Color.FromArgb(
+        private static Color GetColorHigh(Color input) =>
+            Color.FromArgb(
                 GetIntHigh(input.R),
                 GetIntHigh(input.G),
                 GetIntHigh(input.B));
-        }
 
-        private static Color GetColorLow(Color input)
-        {
-            return Color.FromArgb(
+        private static Color GetColorLow(Color input) =>
+            Color.FromArgb(
                 input.R >> 2,
                 input.G >> 2,
                 input.B >> 2);
-        }
 
         private static int GetIntHigh(int input) =>
             (input << 2) + (input >> 4);

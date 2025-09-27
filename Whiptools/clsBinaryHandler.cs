@@ -19,10 +19,9 @@ namespace Whiptools
             while ((inPos < input.Length) && (outPos < outLength))
             {
                 int ctrl = Convert.ToInt32(input[inPos]);
+                if (ctrl == 0x00) return output; // 0x00: terminate output
 
-                if (ctrl == 0x00) // 0x00: terminate output
-                    return output;
-                else if (ctrl <= 0x3F) // 0x01..0x3F: literal copy from input
+                if (ctrl <= 0x3F) // 0x01..0x3F: literal copy from input
                 {
                     if (inPos + 1 + ctrl > input.Length || outPos + ctrl > outLength)
                         throw new IndexOutOfRangeException();
