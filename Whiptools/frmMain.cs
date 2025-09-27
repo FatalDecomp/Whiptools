@@ -48,7 +48,6 @@ namespace Whiptools
         {
             if (frmBitmap != null && !frmBitmap.IsDisposed)
             {
-                frmBitmap.Close();
                 frmBitmap.Dispose();
                 frmBitmap = null;
             }
@@ -105,9 +104,10 @@ namespace Whiptools
                             if (!isUnmangle && !VerifyMangle.Verify(inputData, outputData))
                                 throw new InvalidOperationException();
 
-                            string outputFile = $"{folderDialog.SelectedPath}\\" +
+                            string outputFile = Path.Combine(folderDialog.SelectedPath,
                                 Path.GetFileNameWithoutExtension(fi.FullName) +
-                                (isUnmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
+                                (isUnmangle ? unmangledSuffix : mangledSuffix) +
+                                Path.GetExtension(fi.FullName));
                             File.WriteAllBytes(outputFile, outputData);
 
                             Interlocked.Increment(ref countSucc);
@@ -187,8 +187,8 @@ namespace Whiptools
                         {
                             byte[] rawData = File.ReadAllBytes(fileName);
                             byte[] decodedData = FibCipher.Decode(rawData, 115, 150);
-                            outputFile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileName(fileName)}.RAW";
+                            outputFile = Path.Combine(folderDialog.SelectedPath,
+                                $"{Path.GetFileName(fileName)}.RAW");
                             File.WriteAllBytes(outputFile, decodedData);
                         }
                         string msg = "";
@@ -284,8 +284,8 @@ namespace Whiptools
                         {
                             byte[] rawData = File.ReadAllBytes(fileName);
                             byte[] wavData = WavAudio.ConvertRawToWav(rawData);
-                            outputFile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileName(fileName)}.WAV";
+                            outputFile = Path.Combine(folderDialog.SelectedPath,
+                                $"{Path.GetFileName(fileName)}.WAV");
                             File.WriteAllBytes(outputFile, wavData);
                         }
                         string msg = "";
@@ -331,8 +331,8 @@ namespace Whiptools
                         {
                             byte[] inputData = File.ReadAllBytes(fileName);
                             byte[] outputData = HMPMIDI.ConvertToRevisedFormat(inputData);
-                            outputFile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileNameWithoutExtension(fileName)}_revised.HMP";
+                            outputFile = Path.Combine(folderDialog.SelectedPath,
+                                $"{Path.GetFileNameWithoutExtension(fileName)}_revised.HMP");
                             File.WriteAllBytes(outputFile, outputData);
                             countSucc++;
                         }
@@ -469,17 +469,15 @@ namespace Whiptools
                         {
                             case ".png":
                                 bitmap.Save(saveDialog.FileName, ImageFormat.Png);
-                                MessageBox.Show($"Saved {saveDialog.FileName}", "RACE OVER",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 break;
                             case ".bmp":
                                 bitmap.Save(saveDialog.FileName, ImageFormat.Bmp);
-                                MessageBox.Show($"Saved {saveDialog.FileName}", "RACE OVER",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                                 break;
                             default:
                                 throw new NotSupportedException();
                         }
+                        MessageBox.Show($"Saved {saveDialog.FileName}", "RACE OVER",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }

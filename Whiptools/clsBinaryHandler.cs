@@ -237,50 +237,50 @@ namespace Whiptools
             switch (c.Type)
             {
                 case Opcode.ByteDiff: // 0x40..0x4F
-                    {
-                        int len = c.Len - 3;
-                        output.Add((byte)(0x40 | len));
-                        break;
-                    }
+                {
+                    int len = c.Len - 3;
+                    output.Add((byte)(0x40 | len));
+                    break;
+                }
                 case Opcode.WordDiff: // 0x50..0x5F
-                    {
-                        int len = c.Len - 2;
-                        output.Add((byte)(0x50 | len));
-                        break;
-                    }
+                {
+                    int len = c.Len - 2;
+                    output.Add((byte)(0x50 | len));
+                    break;
+                }
                 case Opcode.ByteRepeat: // 0x60..0x6F
-                    {
-                        int len = c.Len - 3;
-                        output.Add((byte)(0x60 | len));
-                        break;
-                    }
+                {
+                    int len = c.Len - 3;
+                    output.Add((byte)(0x60 | len));
+                    break;
+                }
                 case Opcode.WordRepeat: // 0x70..0x7F
-                    {
-                        int len = c.Len - 2;
-                        output.Add((byte)(0x70 | len));
-                        break;
-                    }
+                {
+                    int len = c.Len - 2;
+                    output.Add((byte)(0x70 | len));
+                    break;
+                }
                 case Opcode.ShortBlock: // 0x80..0xBF
-                    {
-                        int off = c.Dist - 3;
-                        output.Add((byte)(0x80 | off));
-                        break;
-                    }
+                {
+                    int off = c.Dist - 3;
+                    output.Add((byte)(0x80 | off));
+                    break;
+                }
                 case Opcode.MediumBlock: // 0xC0..0xDF
-                    {
-                        int off = c.Dist - 3;
-                        output.Add((byte)(0xC0 | ((c.Len - 4) << 2) | ((off >> 8) & 0x03)));
-                        output.Add((byte)(off & 0xFF));
-                        break;
-                    }
+                {
+                    int off = c.Dist - 3;
+                    output.Add((byte)(0xC0 | ((c.Len - 4) << 2) | ((off >> 8) & 0x03)));
+                    output.Add((byte)(off & 0xFF));
+                    break;
+                }
                 case Opcode.LongBlock: // 0xE0..0xFF
-                    {
-                        int off = c.Dist - 3;
-                        output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
-                        output.Add((byte)(off & 0xFF));
-                        output.Add((byte)(c.Len - 5));
-                        break;
-                    }
+                {
+                    int off = c.Dist - 3;
+                    output.Add((byte)(0xE0 | ((off >> 8) & 0x1F)));
+                    output.Add((byte)(off & 0xFF));
+                    output.Add((byte)(c.Len - 5));
+                    break;
+                }
             }
         }
 
