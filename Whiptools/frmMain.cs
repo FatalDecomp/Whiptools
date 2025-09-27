@@ -66,13 +66,13 @@ namespace Whiptools
             FileMangling(false);
         }
 
-        private void FileMangling(bool unmangle)
+        private void FileMangling(bool isUnmangle)
         {
             using (var openDialog = new OpenFileDialog
             {
-                Filter = $"{MangleType(!unmangle)}d Files (*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK)|" +
+                Filter = $"{MangleType(!isUnmangle)}d Files (*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK)|" +
                     "*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK|All Files (*.*)|*.*",
-                Title = $"Select {MangleType(!unmangle)}d Files",
+                Title = $"Select {MangleType(!isUnmangle)}d Files",
                 Multiselect = true
             })
             {
@@ -80,36 +80,41 @@ namespace Whiptools
 
                 using (var folderDialog = new FolderBrowserDialog
                 {
-                    Description = $"Save {MangleType(unmangle).ToLower()}d files in:"
+                    Description = $"Save {MangleType(isUnmangle).ToLower()}d files in:"
                 })
                 {
                     if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
                     int countSucc = 0, countFail = 0;
                     int inputSize = 0, outputSize = 0;
-                    string displayoutputfile = ""; // for msgbox only
+                    string displayOutputFile = ""; // for msgbox only
                     int firstFileSet = 0;
-                    var filelist = openDialog.FileNames
+                    var fileList = openDialog.FileNames
                         .Select(f => new FileInfo(f))
                         .OrderByDescending(fi => fi.Length);
                     var sw = Stopwatch.StartNew();
-                    Parallel.ForEach(filelist, fi =>
+                    Parallel.ForEach(fileList, fi =>
                     {
                         try
                         {
                             byte[] inputData = File.ReadAllBytes(fi.FullName);
-                            byte[] outputData = unmangle ? Unmangler.Unmangle(inputData) : Mangler.Mangle(inputData);
+                            byte[] outputData = isUnmangle ?
+                                Unmangler.Unmangle(inputData) : Mangler.Mangle(inputData);
 
-                            string outputfile = $"{folderDialog.SelectedPath}\\" +
+                            // verify mangled output
+                            if (!isUnmangle && !VerifyMangle.Verify(inputData, outputData))
+                                throw new InvalidOperationException();
+
+                            string outputFile = $"{folderDialog.SelectedPath}\\" +
                                 Path.GetFileNameWithoutExtension(fi.FullName) +
-                                (unmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
-                            File.WriteAllBytes(outputfile, outputData);
+                                (isUnmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
+                            File.WriteAllBytes(outputFile, outputData);
 
                             Interlocked.Increment(ref countSucc);
                             Interlocked.Add(ref inputSize, inputData.Length);
                             Interlocked.Add(ref outputSize, outputData.Length);
                             if (Interlocked.CompareExchange(ref firstFileSet, 1, 0) == 0)
-                                displayoutputfile = outputfile;
+                                displayOutputFile = outputFile;
                         }
                         catch
                         {
@@ -121,21 +126,21 @@ namespace Whiptools
                     if (openDialog.FileNames.Length == 1)
                     {
                         if (countSucc == 1)
-                            msg = $"Saved {displayoutputfile}";
+                            msg = $"Saved {displayOutputFile}";
                         else
-                            msg = $"Failed to {MangleType(unmangle).ToLower()} " +
+                            msg = $"Failed to {MangleType(isUnmangle).ToLower()} " +
                                 openDialog.FileNames.ElementAt(0);
                     }
                     else
                     {
                         if (countSucc > 0)
-                            msg = $"Saved {countSucc} {MangleType(unmangle).ToLower()}d file(s) in "
+                            msg = $"Saved {countSucc} {MangleType(isUnmangle).ToLower()}d file(s) in "
                                 + folderDialog.SelectedPath;
                         if (countFail > 0)
                             msg += (countSucc > 0 ? "\n\n" : "") +
-                                $"Failed to {MangleType(unmangle).ToLower()} {countFail} file(s)!";
+                                $"Failed to {MangleType(isUnmangle).ToLower()} {countFail} file(s)!";
                     }
-                    if (!unmangle)
+                    if (!isUnmangle)
                     {
                         msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
                         if (countSucc > 0)
@@ -150,9 +155,9 @@ namespace Whiptools
             }
         }
 
-        public static string MangleType(bool unmangle)
+        public static string MangleType(bool isUnmangle)
         {
-            return unmangle ? "Unmangle" : "Mangle";
+            return isUnmangle ? "Unmangle" : "Mangle";
         }
 
         // file decoding
@@ -177,18 +182,18 @@ namespace Whiptools
                     {
                         if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
-                        string outputfile = "";
-                        foreach (String filename in openDialog.FileNames)
+                        string outputFile = "";
+                        foreach (String fileName in openDialog.FileNames)
                         {
-                            byte[] rawData = File.ReadAllBytes(filename);
+                            byte[] rawData = File.ReadAllBytes(fileName);
                             byte[] decodedData = FibCipher.Decode(rawData, 115, 150);
-                            outputfile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileName(filename)}.RAW";
-                            File.WriteAllBytes(outputfile, decodedData);
+                            outputFile = folderDialog.SelectedPath +
+                                $"\\{Path.GetFileName(fileName)}.RAW";
+                            File.WriteAllBytes(outputFile, decodedData);
                         }
                         string msg = "";
                         if (openDialog.FileNames.Length == 1)
-                            msg = $"Saved {outputfile}";
+                            msg = $"Saved {outputFile}";
                         else
                             msg = $"Saved {openDialog.FileNames.Length} RAW files in " +
                                 folderDialog.SelectedPath;
@@ -212,35 +217,35 @@ namespace Whiptools
             DecodeIniFile("PASSWORD.INI", 23, 37);
         }
 
-        private void DecodeIniFile(string IniFilename, int a0, int a1)
+        private void DecodeIniFile(string iniFilename, int a0, int a1)
         {
             try
             {
                 using (var openDialog = new OpenFileDialog
                 {
                     Filter = "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
-                    Title = $"Select {IniFilename} File",
+                    Title = $"Select {iniFilename} File",
                     Multiselect = false
                 })
                 {
                     if (openDialog.ShowDialog() != DialogResult.OK) return;
 
-                    string filename = openDialog.FileName;
-                    byte[] rawData = File.ReadAllBytes(filename);
+                    string fileName = openDialog.FileName;
+                    byte[] rawData = File.ReadAllBytes(fileName);
                     byte[] decodedData = FibCipher.Decode(rawData, a0, a1);
                     using (var saveDialog = new SaveFileDialog
                     {
                         Filter = "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
-                        FileName = $"{Path.GetFileNameWithoutExtension(filename)}_decoded" + 
-                            Path.GetExtension(filename),
-                        Title = $"Save Decoded {IniFilename} As"
+                        FileName = $"{Path.GetFileNameWithoutExtension(fileName)}_decoded" + 
+                            Path.GetExtension(fileName),
+                        Title = $"Save Decoded {iniFilename} As"
                     })
                     {
                         if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
-                        string savefile = saveDialog.FileName;
-                        File.WriteAllBytes(savefile, decodedData);
-                        MessageBox.Show($"Saved {savefile}", "RACE OVER",
+                        string saveFile = saveDialog.FileName;
+                        File.WriteAllBytes(saveFile, decodedData);
+                        MessageBox.Show($"Saved {saveFile}", "RACE OVER",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
@@ -274,18 +279,18 @@ namespace Whiptools
                     {
                         if (folderDialog.ShowDialog() != DialogResult.OK) return;
 
-                        string outputfile = "";
-                        foreach (String filename in openDialog.FileNames)
+                        string outputFile = "";
+                        foreach (String fileName in openDialog.FileNames)
                         {
-                            byte[] rawData = File.ReadAllBytes(filename);
+                            byte[] rawData = File.ReadAllBytes(fileName);
                             byte[] wavData = WavAudio.ConvertRawToWav(rawData);
-                            outputfile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileName(filename)}.WAV";
-                            File.WriteAllBytes(outputfile, wavData);
+                            outputFile = folderDialog.SelectedPath +
+                                $"\\{Path.GetFileName(fileName)}.WAV";
+                            File.WriteAllBytes(outputFile, wavData);
                         }
                         string msg = "";
                         if (openDialog.FileNames.Length == 1)
-                            msg = $"Saved {outputfile}";
+                            msg = $"Saved {outputFile}";
                         else
                             msg = $"Saved {openDialog.FileNames.Length} WAV files in " +
                                 folderDialog.SelectedPath;
@@ -319,16 +324,16 @@ namespace Whiptools
 
                     int countSucc = 0;
                     int countFail = 0;
-                    string outputfile = "";
-                    foreach (String filename in openDialog.FileNames)
+                    string outputFile = "";
+                    foreach (String fileName in openDialog.FileNames)
                     {
                         try
                         {
-                            byte[] inputData = File.ReadAllBytes(filename);
+                            byte[] inputData = File.ReadAllBytes(fileName);
                             byte[] outputData = HMPMIDI.ConvertToRevisedFormat(inputData);
-                            outputfile = folderDialog.SelectedPath +
-                                $"\\{Path.GetFileNameWithoutExtension(filename)}_revised.HMP";
-                            File.WriteAllBytes(outputfile, outputData);
+                            outputFile = folderDialog.SelectedPath +
+                                $"\\{Path.GetFileNameWithoutExtension(fileName)}_revised.HMP";
+                            File.WriteAllBytes(outputFile, outputData);
                             countSucc++;
                         }
                         catch
@@ -340,7 +345,7 @@ namespace Whiptools
                     if (openDialog.FileNames.Length == 1)
                     {
                         if (countSucc == 1)
-                            msg = $"Saved {outputfile}";
+                            msg = $"Saved {outputFile}";
                         else
                             msg = $"Failed to convert {openDialog.FileNames.ElementAt(0)}";
                     }
@@ -373,9 +378,9 @@ namespace Whiptools
                 {
                     if (openDialog.ShowDialog() != DialogResult.OK) return;
 
-                    string filename = openDialog.FileName;
-                    bitmapData = File.ReadAllBytes(filename);
-                    bitmapName = Path.GetFileName(filename);
+                    string fileName = openDialog.FileName;
+                    bitmapData = File.ReadAllBytes(fileName);
+                    bitmapName = Path.GetFileName(fileName);
 
                     int countColors = 0;
                     foreach (byte b in bitmapData)
@@ -393,7 +398,7 @@ namespace Whiptools
                         }
                     }
 
-                    txtBitmapPath.Text = Path.GetFullPath(filename);
+                    txtBitmapPath.Text = Path.GetFullPath(fileName);
                     lblBitmapLoaded.Text = $"Loaded {bitmapData.Length} bytes, {countColors + 1} colours";
                 }
             }
@@ -429,11 +434,11 @@ namespace Whiptools
                 {
                     if (openDialog.ShowDialog() != DialogResult.OK) return;
 
-                    string filename = openDialog.FileName;
-                    paletteData = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(filename));
-                    paletteName = Path.GetFileName(filename);
+                    string fileName = openDialog.FileName;
+                    paletteData = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(fileName));
+                    paletteName = Path.GetFileName(fileName);
 
-                    txtPalettePath.Text = Path.GetFullPath(filename);
+                    txtPalettePath.Text = Path.GetFullPath(fileName);
                     lblPaletteLoaded.Text = $"Loaded {paletteData.Length} colours";
                 }
             }
@@ -447,11 +452,11 @@ namespace Whiptools
         {
             try
             {
-                string filename = Path.GetFileNameWithoutExtension(paletteName) + "_palette";
+                string fileName = Path.GetFileNameWithoutExtension(paletteName) + "_palette";
                 using (var saveDialog = new SaveFileDialog
                 {
                     Filter = "Portable Network Graphics (*.png)|*.png|Windows Bitmap (*.bmp)|*.bmp|All Files (*.*)|*.*",
-                    FileName = filename.Replace(unmangledSuffix, ""),
+                    FileName = fileName.Replace(unmangledSuffix, ""),
                     Title = "Export Palette"
                 })
                 {
@@ -503,7 +508,7 @@ namespace Whiptools
                 frmBitmap.Height = Math.Min(bitmapHeight,
                     Convert.ToInt32(Screen.PrimaryScreen.Bounds.Height * 0.95)) + 39;
                 frmBitmap.Text = $"{bitmapName} | {paletteName} | {bitmapWidth} x {bitmapHeight} | Click on image to save";
-                frmBitmap.filename = Path.GetFileNameWithoutExtension(bitmapName);
+                frmBitmap.fileName = Path.GetFileNameWithoutExtension(bitmapName);
                 frmBitmap.Show();
             }
             catch
@@ -564,9 +569,9 @@ namespace Whiptools
             {
                 if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
-                string filename = saveDialog.FileName;
-                File.WriteAllBytes(filename, Bitmapper.GetPaletteArray(palette));
-                MessageBox.Show($"Saved {filename}", "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                string fileName = saveDialog.FileName;
+                File.WriteAllBytes(fileName, Bitmapper.GetPaletteArray(palette));
+                MessageBox.Show($"Saved {fileName}", "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
@@ -594,8 +599,8 @@ namespace Whiptools
                 {
                     if (openDialog.ShowDialog() != DialogResult.OK) return;
 
-                    string filename = openDialog.FileName; 
-                    Color[] inputPalette = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(filename));
+                    string fileName = openDialog.FileName; 
+                    Color[] inputPalette = Bitmapper.ConvertRGBToPalette(File.ReadAllBytes(fileName));
                     int maxOffset = 256 - newPalette.Length;
                     string userInput = Microsoft.VisualBasic.Interaction.InputBox(
                         $"Add at position (0-{maxOffset}):", "Add to Palette", "0");
@@ -608,7 +613,7 @@ namespace Whiptools
                         outputPalette[i] = inputPalette[i];
                     for (int i = 0; i < newPalette.Length; i++)
                         outputPalette[i + offset] = newPalette[i];
-                    SavePalette(outputPalette, filename);
+                    SavePalette(outputPalette, fileName);
                 }
             }
             catch
@@ -650,9 +655,9 @@ namespace Whiptools
                     {
                         if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
-                        string savefile = saveDialog.FileName;
-                        File.WriteAllBytes(savefile, outputArray);
-                        MessageBox.Show($"Saved {savefile}", "RACE OVER",
+                        string saveFile = saveDialog.FileName;
+                        File.WriteAllBytes(saveFile, outputArray);
+                        MessageBox.Show($"Saved {saveFile}", "RACE OVER",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }

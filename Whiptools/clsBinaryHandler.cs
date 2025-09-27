@@ -133,8 +133,8 @@ namespace Whiptools
             if (input == null) throw new ArgumentNullException();
             if (input.Length > 100000000) throw new OutOfMemoryException();
 
-            var outlist = new List<byte>(input.Length / 2 + 16);
-            outlist.AddRange(BitConverter.GetBytes(input.Length)); // original length
+            var outList = new List<byte>(input.Length / 2 + 16);
+            outList.AddRange(BitConverter.GetBytes(input.Length)); // original length
 
             var literals = new List<byte>(64);
             int pos = 0;
@@ -146,7 +146,7 @@ namespace Whiptools
                 {
                     literals.Add(input[pos]);
                     pos++;
-                    if (literals.Count == 63) FlushLiterals(literals, outlist);
+                    if (literals.Count == 63) FlushLiterals(literals, outList);
                     continue;
                 }
 
@@ -164,21 +164,18 @@ namespace Whiptools
                 {
                     literals.Add(input[pos]); // take one literal and re-evaluate
                     pos++;
-                    if (literals.Count == 63) FlushLiterals(literals, outlist);
+                    if (literals.Count == 63) FlushLiterals(literals, outList);
                     continue;
                 }
 
-                FlushLiterals(literals, outlist);
-                Emit(outlist, bestNow);
+                FlushLiterals(literals, outList);
+                Emit(outList, bestNow);
                 pos += bestNow.Cover;
             }
 
-            FlushLiterals(literals, outlist);
-            outlist.Add((byte)0x00); // terminate with zero
-
-            byte[] output = outlist.ToArray();
-            if (!Verify(input, output)) throw new InvalidOperationException();
-            return output; // return if verified
+            FlushLiterals(literals, outList);
+            outList.Add((byte)0x00); // terminate with zero
+            return outList.ToArray();
         }
 
         private static Candidate ChooseBest(byte[] input, int pos)
@@ -441,8 +438,11 @@ namespace Whiptools
             best = Better(best, bestLong);
             return best;
         }
+    }
 
-        private static bool Verify(byte[] original, byte[] mangled)
+    public static class VerifyMangle
+    {
+        public static bool Verify(byte[] original, byte[] mangled)
         {
             byte[] unmangled = Unmangler.Unmangle(mangled);
             if (original == null || unmangled == null) return false;

@@ -8,7 +8,7 @@ namespace Whiptools
 {
     public partial class FrmBitmap : Form
     {
-        public string filename;
+        public string fileName;
 
         public FrmBitmap()
         {
@@ -30,7 +30,7 @@ namespace Whiptools
             using (var saveDialog = new SaveFileDialog
             {
                 Filter = "Portable Network Graphics (*.png)|*.png|Windows Bitmap (*.bmp)|*.bmp|All Files (*.*)|*.*",
-                FileName = filename.Replace(frmMain.unmangledSuffix, ""),
+                FileName = fileName.Replace(frmMain.unmangledSuffix, ""),
                 Title = "Save As"
             })
             {
