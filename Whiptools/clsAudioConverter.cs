@@ -74,27 +74,23 @@ namespace Whiptools
 
         public static byte[] ConvertToRevisedFormat(byte[] inputData)
         {
-            if (CheckOriginalFormat(inputData)) // must be original HMP file format
-            {
-                int inputLen = inputData.Length;
-                var outputData = new byte[inputLen + chunkStartRevised - chunkStartOrig];
+            // must be original HMP file format
+            if (!CheckOriginalFormat(inputData)) throw new FormatException();
+            
+            int inputLen = inputData.Length;
+            var outputData = new byte[inputLen + chunkStartRevised - chunkStartOrig];
 
-                // up to 0x308
-                Array.Copy(inputData, 0, outputData, 0, chunkStartOrig);
+            // up to 0x308
+            Array.Copy(inputData, 0, outputData, 0, chunkStartOrig);
 
-                // rest of input file but start at 0x388
-                Array.Copy(inputData, chunkStartOrig, outputData, chunkStartRevised, inputLen - chunkStartOrig);
+            // rest of input file but start at 0x388
+            Array.Copy(inputData, chunkStartOrig, outputData, chunkStartRevised, inputLen - chunkStartOrig);
 
-                // update header
-                var prefixBytes = Encoding.ASCII.GetBytes(headerRevised);
-                Array.Copy(prefixBytes, 0, outputData, 0, prefixBytes.Length);
+            // update header
+            var prefixBytes = Encoding.ASCII.GetBytes(headerRevised);
+            Array.Copy(prefixBytes, 0, outputData, 0, prefixBytes.Length);
 
-                return outputData;
-            }
-            else
-            {
-                throw new FormatException();
-            }
+            return outputData;
         }
 
         private static bool CheckOriginalFormat(byte[] inputData)
