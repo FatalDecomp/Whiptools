@@ -260,6 +260,8 @@ namespace Whiptools
                     output.Add((byte)(off & 0xFF));
                     output.Add((byte)(c.Len - 5));
                     break;
+                case Opcode.None:
+                    break;
                 default:
                     break;
             }

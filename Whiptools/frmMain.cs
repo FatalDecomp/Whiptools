@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace Whiptools
 {
-    public partial class frmMain : Form
+    public partial class FrmMain : Form
     {
         // bitmap viewer
         private byte[] bitmapData;
@@ -26,7 +26,7 @@ namespace Whiptools
         public const string mangledSuffix = "_mang";
         public const string unmangledSuffix = "_unmang";
 
-        public frmMain()
+        public FrmMain()
         {
             InitializeComponent();
             this.FormClosing += FrmMain_FormClosing;

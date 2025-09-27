@@ -32,7 +32,7 @@ namespace Whiptools
                 using (var saveDialog = new SaveFileDialog
                 {
                     Filter = "Portable Network Graphics (*.png)|*.png|Windows Bitmap (*.bmp)|*.bmp|All Files (*.*)|*.*",
-                    FileName = fileName.Replace(frmMain.unmangledSuffix, ""),
+                    FileName = fileName.Replace(FrmMain.unmangledSuffix, ""),
                     Title = "Save As"
                 })
                 {

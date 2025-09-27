@@ -2,7 +2,7 @@
 
 namespace Whiptools
 {
-    partial class frmMain
+    partial class FrmMain
     {
         /// <summary>
         /// Required designer variable.
@@ -30,7 +30,7 @@ namespace Whiptools
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.btnExportPalette = new System.Windows.Forms.Button();
             this.lblDimHeight = new System.Windows.Forms.Label();
