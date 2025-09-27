@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Whiptools
@@ -58,13 +59,38 @@ namespace Whiptools
 
         public static Color[] GetPaletteFromBitmap(Bitmap bitmap)
         {
+            int width = bitmap.Width;
+            int height = bitmap.Height; 
+            
             var hashColors = new HashSet<Color>();
-            for (int y = 0; y < bitmap.Height; y++)
-                for (int x = 0; x < bitmap.Width; x++)
-                    hashColors.Add(GetColorLow(bitmap.GetPixel(x, y)));
-            Color[] output = new Color[hashColors.Count];
-            hashColors.CopyTo(output);
-            return output;
+            
+            using (var clone = bitmap.Clone(new Rectangle(0, 0, width, height), PixelFormat.Format24bppRgb))
+            {
+                var rect = new Rectangle(0, 0, width, height);
+                var bitmapData = clone.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                try
+                {
+                    int stride = bitmapData.Stride;
+                    byte[] pixelData = new byte[stride * height];
+                    Marshal.Copy(bitmapData.Scan0, pixelData, 0, pixelData.Length);
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            int offset = y * stride + x * 3;
+                            byte B = pixelData[offset];
+                            byte G = pixelData[offset + 1];
+                            byte R = pixelData[offset + 2];
+                            hashColors.Add(GetColorLow(Color.FromArgb(R, G, B)));
+                        }
+                    }
+                }
+                finally
+                {
+                    clone.UnlockBits(bitmapData);
+                }
+            }
+            return hashColors.ToArray();
         }
 
         public static byte[] GetPaletteArray(Color[] palette)
@@ -89,7 +115,7 @@ namespace Whiptools
             for (int i = 0; i < palette.Length; i++)
                 paletteDict[palette[i]] = (byte)i;
 
-            using (var clone = bitmap.Clone(new Rectangle(0, 0, width, height), bitmap.PixelFormat))
+            using (var clone = bitmap.Clone(new Rectangle(0, 0, width, height), PixelFormat.Format24bppRgb))
             {
                 var rect = new Rectangle(0, 0, width, height);
                 var bitmapData = clone.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
