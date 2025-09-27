@@ -99,22 +99,17 @@ namespace Whiptools
                         {
                             byte[] inputData = File.ReadAllBytes(fi.FullName);
                             byte[] outputData = unmangle ? Unmangler.Unmangle(inputData) : Mangler.Mangle(inputData);
-                            if (outputData.Length == 0)
-                            {
-                                Interlocked.Increment(ref countFail);
-                            }
-                            else
-                            {
-                                string outputfile = $"{folderDialog.SelectedPath}\\" +
-                                    Path.GetFileNameWithoutExtension(fi.FullName) +
-                                    (unmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
-                                File.WriteAllBytes(outputfile, outputData);
-                                Interlocked.Increment(ref countSucc);
-                                Interlocked.Add(ref inputSize, inputData.Length);
-                                Interlocked.Add(ref outputSize, outputData.Length);
-                                if (Interlocked.CompareExchange(ref firstFileSet, 1, 0) == 0)
-                                    displayoutputfile = outputfile;
-                            }
+
+                            string outputfile = $"{folderDialog.SelectedPath}\\" +
+                                Path.GetFileNameWithoutExtension(fi.FullName) +
+                                (unmangle ? unmangledSuffix : mangledSuffix) + Path.GetExtension(fi.FullName);
+                            File.WriteAllBytes(outputfile, outputData);
+
+                            Interlocked.Increment(ref countSucc);
+                            Interlocked.Add(ref inputSize, inputData.Length);
+                            Interlocked.Add(ref outputSize, outputData.Length);
+                            if (Interlocked.CompareExchange(ref firstFileSet, 1, 0) == 0)
+                                displayoutputfile = outputfile;
                         }
                         catch
                         {

@@ -184,12 +184,11 @@ namespace Whiptools
         private static Candidate ChooseBest(byte[] input, int pos)
         {
             Candidate best = default;
-            Candidate c;
-            c = TryByteDiff(input, pos); best = Better(best, c);
-            c = TryWordDiff(input, pos); best = Better(best, c);
-            c = TryByteRepeat(input, pos); best = Better(best, c);
-            c = TryWordRepeat(input, pos); best = Better(best, c);
-            c = TryBlock(input, pos); best = Better(best, c);
+            best = Better(best, TryByteDiff(input, pos));
+            best = Better(best, TryWordDiff(input, pos));
+            best = Better(best, TryByteRepeat(input, pos));
+            best = Better(best, TryWordRepeat(input, pos));
+            best = Better(best, TryBlock(input, pos));
             return best;
         }
 
