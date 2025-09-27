@@ -7,6 +7,7 @@ namespace Whiptools
     {
         public static byte[] Unmangle(byte[] input)
         {
+            if (input == null) throw new ArgumentNullException();
             int outLength = BitConverter.ToInt32(input, 0); // output length is first 4 bytes of input
             if (outLength > 100000000) throw new OutOfMemoryException();
             var output = new byte[outLength];
@@ -149,20 +150,17 @@ namespace Whiptools
                     continue;
                 }
 
-                // one literal + best at next pos
+                // lookahead: one literal + best at next pos
                 Candidate bestNext = (pos + 1 < input.Length) ?
                     ChooseBest(input, pos + 1) : default;
 
-                // incremental cost
-                int laLitCost = (literals.Count % 63 == 0) ? 2 : 1;
+                // lookahead: incremental cost
+                int nextLitCost = (literals.Count % 63 == 0) ? 2 : 1;
 
-                // take literal only when it helps compression
-                double nowRatio = (double)bestNow.Cost / (double)bestNow.Cover;
-                double laRatio = (bestNext.IsValid) ?
-                    (double)(laLitCost + bestNext.Cost) / (double)(1 + bestNext.Cover) :
-                    double.MaxValue;
-
-                if (laRatio < nowRatio)
+                // cross-multiply cost/cover ratios and compare
+                int lhs = (nextLitCost + bestNext.Cost) * bestNow.Cover;
+                int rhs = bestNow.Cost * (1 + bestNext.Cover);
+                if (lhs < rhs)
                 {
                     literals.Add(input[pos]); // take one literal and re-evaluate
                     pos++;
@@ -179,10 +177,8 @@ namespace Whiptools
             outlist.Add((byte)0x00); // terminate with zero
 
             byte[] output = outlist.ToArray();
-            if (Verify(input, output)) // verify output
-                return output;
-            else
-                throw new InvalidOperationException();
+            if (!Verify(input, output)) throw new InvalidOperationException();
+            return output; // return if verified
         }
 
         private static Candidate ChooseBest(byte[] input, int pos)
@@ -199,14 +195,14 @@ namespace Whiptools
 
         private static Candidate Better(Candidate a, Candidate b)
         {
-            if (!b.IsValid) return a;
             if (!a.IsValid) return b;
+            if (!b.IsValid) return a;
 
-            // prefer lower cost per covered byte
-            double ra = (double)a.Cost / (double)a.Cover;
-            double rb = (double)b.Cost / (double)b.Cover;
-            if (rb < ra) return b;
-            if (ra < rb) return a;
+            // cross-multiply, prefer lower cost/cover
+            int lhs = a.Cost * b.Cover;
+            int rhs = b.Cost * a.Cover;
+            if (rhs < lhs) return b;
+            if (lhs < rhs) return a;
 
             // tie-breaker: larger cover
             if (b.Cover > a.Cover) return b;
@@ -221,10 +217,8 @@ namespace Whiptools
             if (aIsBlock && !bIsBlock) return a;
 
             // tie-breaker: shorter distance
-            if (b.Dist != 0 && a.Dist != 0 && b.Dist < a.Dist)
-                return b;
-            else
-                return a;
+            if (b.Dist != 0 && a.Dist != 0 && b.Dist < a.Dist) return b;
+            return a;
         }
 
         private static void FlushLiterals(List<byte> literals, List<byte> output)
