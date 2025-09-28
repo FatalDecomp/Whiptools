@@ -117,32 +117,25 @@ namespace Whiptools
                     string msg = "";
                     if (openDialog.FileNames.Length == 1)
                     {
-                        if (countSucc == 1)
-                            msg = $"Saved {displayOutputFile}";
-                        else
-                            msg = $"Failed to {MangleType(isUnmangle).ToLower()} " +
-                                openDialog.FileNames.ElementAt(0);
+                        if (countSucc == 1) msg = $"Saved {displayOutputFile}";
+                        else msg = $"Failed to {MangleType(isUnmangle).ToLower()} " +
+                            openDialog.FileNames.ElementAt(0);
                     }
                     else
                     {
-                        if (countSucc > 0)
-                            msg = $"Saved {countSucc} {MangleType(isUnmangle).ToLower()}d file(s) in "
-                                + folderDialog.SelectedPath;
-                        if (countFail > 0)
-                            msg += (countSucc > 0 ? "\n\n" : "") +
-                                $"Failed to {MangleType(isUnmangle).ToLower()} {countFail} file(s)!";
+                        if (countSucc > 0) msg = $"Saved {countSucc} {MangleType(isUnmangle).ToLower()}" +
+                            $"d file{(countSucc > 1 ? "s" : "")} in {folderDialog.SelectedPath}";
+                        if (countFail > 0) msg += $"{(countSucc > 0 ? "\n\n" : "")}Failed to " +
+                            $"{MangleType(isUnmangle).ToLower()} {countFail} file{(countFail > 1 ? "s" : "")}!";
                     }
                     if (!isUnmangle)
                     {
                         msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
-                        if (countSucc > 0)
-                            if (outputSize > 0)
-                                msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
+                        if (countSucc > 0 && outputSize > 0)
+                            msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
                     }
-                    if (countFail > 0)
-                        Utils.MsgError(msg);
-                    else
-                        Utils.MsgOK(msg);
+                    if (countFail > 0) Utils.MsgError(msg);
+                    else Utils.MsgOK(msg);
                 }
             }
         }
@@ -152,50 +145,14 @@ namespace Whiptools
 
         // file decoding
 
-        private void BtnDecodeCheatAudio_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                using (var openDialog = new OpenFileDialog
-                {
-                    Filter = "Whiplash Cheat Audio (*.KC)|*.KC|All Files (*.*)|*.*",
-                    Title = "Select Cheat Audio Files",
-                    Multiselect = true
-                })
-                {
-                    if (openDialog.ShowDialog() != DialogResult.OK) return;
-                    
-                    using (var folderDialog = new FolderBrowserDialog
-                    {
-                        Description = "Save RAW files in:"
-                    })
-                    {
-                        if (folderDialog.ShowDialog() != DialogResult.OK) return;
-
-                        string outputFile = "";
-                        foreach (String fileName in openDialog.FileNames)
-                        {
-                            byte[] rawData = File.ReadAllBytes(fileName);
-                            byte[] decodedData = FibCipher.Decode(rawData, 115, 150);
-                            outputFile = Path.Combine(folderDialog.SelectedPath,
-                                $"{Path.GetFileName(fileName)}.RAW");
-                            File.WriteAllBytes(outputFile, decodedData);
-                        }
-                        string msg = "";
-                        if (openDialog.FileNames.Length == 1)
-                            msg = $"Saved {outputFile}";
-                        else
-                            msg = $"Saved {openDialog.FileNames.Length} RAW files in " +
-                                folderDialog.SelectedPath;
-                        Utils.MsgOK(msg);
-                    }
-                }
-            }
-            catch
-            {
-                Utils.MsgError();
-            }
-        }
+        private void BtnDecodeCheatAudio_Click(object sender, EventArgs e) =>
+            Utils.BatchProcess(
+                "Whiplash Cheat Audio (*.KC)|*.KC|All Files (*.*)|*.*",
+                "Select Cheat Audio Files",
+                "Save RAW files in:",
+                inputData => FibCipher.Decode(inputData, 115, 150),
+                outputFile => Path.GetFileName(outputFile) + ".RAW",
+                "RAW");
 
         private void BtnDecodeFatalIni_Click(object sender, EventArgs e) =>
             DecodeIniFile("FATAL.INI", 77, 101);
@@ -234,111 +191,23 @@ namespace Whiptools
 
         // audio tools
 
-        private void BtnConvertRAWAudio_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                using (var openDialog = new OpenFileDialog
-                {
-                    Filter = "Whiplash Raw Audio (*.RAW;*.RBP;*.RFR;*.RGE;*.RSS)|" +
-                        "*.RAW;*.RBP;*.RFR;*.RGE;*.RSS|All Files (*.*)|*.*",
-                    Title = "Select Raw Audio Files",
-                    Multiselect = true
-                })
-                {
-                    if (openDialog.ShowDialog() != DialogResult.OK) return;
+        private void BtnConvertRAWAudio_Click(object sender, EventArgs e) =>
+            Utils.BatchProcess(
+                "Whiplash Raw Audio (*.RAW;*.RBP;*.RFR;*.RGE;*.RSS)|*.RAW;*.RBP;*.RFR;*.RGE;*.RSS|All Files (*.*)|*.*",
+                "Select Raw Audio Files",
+                "Save WAV files in:",
+                inputData => WavAudio.ConvertRawToWav(inputData),
+                outputFile => Path.GetFileName(outputFile) + ".WAV",
+                "WAV");
 
-                    using (var folderDialog = new FolderBrowserDialog
-                    {
-                        Description = "Save WAV files in:"
-                    })
-                    {
-                        if (folderDialog.ShowDialog() != DialogResult.OK) return;
-
-                        string outputFile = "";
-                        foreach (String fileName in openDialog.FileNames)
-                        {
-                            byte[] rawData = File.ReadAllBytes(fileName);
-                            byte[] wavData = WavAudio.ConvertRawToWav(rawData);
-                            outputFile = Path.Combine(folderDialog.SelectedPath,
-                                $"{Path.GetFileName(fileName)}.WAV");
-                            File.WriteAllBytes(outputFile, wavData);
-                        }
-                        string msg = "";
-                        if (openDialog.FileNames.Length == 1)
-                            msg = $"Saved {outputFile}";
-                        else
-                            msg = $"Saved {openDialog.FileNames.Length} WAV files in " +
-                                folderDialog.SelectedPath;
-                        Utils.MsgOK(msg);
-                    }
-                }
-            }
-            catch
-            {
-                Utils.MsgError();
-            }
-        }
-
-        private void BtnConvertHMPMIDI_Click(object sender, EventArgs e)
-        {
-            using (var openDialog = new OpenFileDialog
-            {
-                Filter = "HMP MIDI Files (*.HMP)|*.HMP|All Files (*.*)|*.*",
-                Title = "Select HMP MIDI Files (Original Format)",
-                Multiselect = true
-            })
-            {
-                if (openDialog.ShowDialog() != DialogResult.OK) return;
-
-                using (var folderDialog = new FolderBrowserDialog
-                {
-                    Description = "Save revised HMP files in:"
-                })
-                {
-                    if (folderDialog.ShowDialog() != DialogResult.OK) return;
-
-                    int countSucc = 0;
-                    int countFail = 0;
-                    string outputFile = "";
-                    foreach (String fileName in openDialog.FileNames)
-                    {
-                        try
-                        {
-                            byte[] inputData = File.ReadAllBytes(fileName);
-                            byte[] outputData = HMPMIDI.ConvertToRevisedFormat(inputData);
-                            outputFile = Path.Combine(folderDialog.SelectedPath,
-                                $"{Path.GetFileNameWithoutExtension(fileName)}_revised.HMP");
-                            File.WriteAllBytes(outputFile, outputData);
-                            countSucc++;
-                        }
-                        catch
-                        {
-                            countFail++;
-                        }
-                    }
-                    string msg = "";
-                    if (openDialog.FileNames.Length == 1)
-                    {
-                        if (countSucc == 1)
-                            msg = $"Saved {outputFile}";
-                        else
-                            msg = $"Failed to convert {openDialog.FileNames.ElementAt(0)}";
-                    }
-                    else
-                    {
-                        if (countSucc > 0)
-                            msg = $"Saved {countSucc} revised HMP file(s) in {folderDialog.SelectedPath}";
-                        if (countFail > 0)
-                            msg += $"{(countSucc > 0 ? "\n\n" : "")}Failed to convert {countFail} file(s)!";
-                    }
-                    if (countFail > 0)
-                        Utils.MsgError(msg);
-                    else
-                        Utils.MsgOK(msg);
-                }
-            }
-        }
+        private void BtnConvertHMPMIDI_Click(object sender, EventArgs e) =>
+            Utils.BatchProcess(
+                "HMP MIDI Files (*.HMP)|*.HMP|All Files (*.*)|*.*",
+                "Select HMP MIDI Files (Original Format)",
+                "Save revised HMP files in:",
+                input => HMPMIDI.ConvertToRevisedFormat(input),
+                fileName => Path.GetFileNameWithoutExtension(fileName) + "_revised.HMP",
+                "HMP");
 
         // bitmap viewer
 
