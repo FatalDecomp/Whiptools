@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,13 +22,10 @@ namespace Whiptools
         private Color[] newPalette;
         private string newBitmapName;
 
-        public const string mangledSuffix = "_mang";
-        public const string unmangledSuffix = "_unmang";
-
         public FrmMain()
         {
             InitializeComponent();
-            this.FormClosing += FrmMain_FormClosing;
+            FormClosing += FrmMain_FormClosing;
         }
 
         private void FrmMain_Load(object sender, EventArgs e)
@@ -55,15 +51,11 @@ namespace Whiptools
 
         // file unmangling
 
-        private void BtnUnmangleFiles_Click(object sender, EventArgs e)
-        {
+        private void BtnUnmangleFiles_Click(object sender, EventArgs e) =>
             FileMangling(true);
-        }
 
-        private void BtnMangleFiles_Click(object sender, EventArgs e)
-        {
+        private void BtnMangleFiles_Click(object sender, EventArgs e) =>
             FileMangling(false);
-        }
 
         private void FileMangling(bool isUnmangle)
         {
@@ -106,7 +98,7 @@ namespace Whiptools
 
                             string outputFile = Path.Combine(folderDialog.SelectedPath,
                                 Path.GetFileNameWithoutExtension(fi.FullName) +
-                                (isUnmangle ? unmangledSuffix : mangledSuffix) +
+                                (isUnmangle ? Utils.unmangledSuffix : Utils.mangledSuffix) +
                                 Path.GetExtension(fi.FullName));
                             File.WriteAllBytes(outputFile, outputData);
 
@@ -148,14 +140,14 @@ namespace Whiptools
                                 msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
                     }
                     if (countFail > 0)
-                        MessageBox.Show(msg, "FATALITY!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Utils.MsgError(msg);
                     else
-                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK(msg);
                 }
             }
         }
 
-        public static string MangleType(bool isUnmangle) =>
+        private static string MangleType(bool isUnmangle) =>
             isUnmangle ? "Unmangle" : "Mangle";
 
         // file decoding
@@ -195,25 +187,21 @@ namespace Whiptools
                         else
                             msg = $"Saved {openDialog.FileNames.Length} RAW files in " +
                                 folderDialog.SelectedPath;
-                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK(msg);
                     }
                 }
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
-        private void BtnDecodeFatalIni_Click(object sender, EventArgs e)
-        {
+        private void BtnDecodeFatalIni_Click(object sender, EventArgs e) =>
             DecodeIniFile("FATAL.INI", 77, 101);
-        }
 
-        private void BtnDecodePasswordIni_Click(object sender, EventArgs e)
-        {
+        private void BtnDecodePasswordIni_Click(object sender, EventArgs e) =>
             DecodeIniFile("PASSWORD.INI", 23, 37);
-        }
 
         private void DecodeIniFile(string iniFilename, int a0, int a1)
         {
@@ -243,14 +231,13 @@ namespace Whiptools
 
                         string saveFile = saveDialog.FileName;
                         File.WriteAllBytes(saveFile, decodedData);
-                        MessageBox.Show($"Saved {saveFile}", "RACE OVER",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK($"Saved {saveFile}");
                     }
                 }
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
@@ -292,13 +279,13 @@ namespace Whiptools
                         else
                             msg = $"Saved {openDialog.FileNames.Length} WAV files in " +
                                 folderDialog.SelectedPath;
-                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK(msg);
                     }
                 }
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
@@ -355,9 +342,9 @@ namespace Whiptools
                             msg += $"{(countSucc > 0 ? "\n\n" : "")}Failed to convert {countFail} file(s)!";
                     }
                     if (countFail > 0)
-                        MessageBox.Show(msg, "FATALITY!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Utils.MsgError(msg);
                     else
-                        MessageBox.Show(msg, "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK(msg);
                 }
             }
         }
@@ -448,41 +435,11 @@ namespace Whiptools
 
         private void BtnExportPalette_Click(object sender, EventArgs e)
         {
-            try
-            {
-                string fileName = Path.GetFileNameWithoutExtension(paletteName) + "_palette";
-                using (var saveDialog = new SaveFileDialog
-                {
-                    Filter = "Portable Network Graphics (*.png)|*.png|Windows Bitmap (*.bmp)|*.bmp|All Files (*.*)|*.*",
-                    FileName = fileName.Replace(unmangledSuffix, ""),
-                    Title = "Export Palette"
-                })
-                {
-                    if (saveDialog.ShowDialog() != DialogResult.OK) return;
-
-                    using (var bitmap = Bitmapper.ConvertPaletteToBitmap(paletteData))
-                    {
-                        string ext = Path.GetExtension(saveDialog.FileName);
-                        switch (ext.ToLower())
-                        {
-                            case ".png":
-                                bitmap.Save(saveDialog.FileName, ImageFormat.Png);
-                                break;
-                            case ".bmp":
-                                bitmap.Save(saveDialog.FileName, ImageFormat.Bmp);
-                                break;
-                            default:
-                                throw new NotSupportedException();
-                        }
-                        MessageBox.Show($"Saved {saveDialog.FileName}", "RACE OVER",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                }
-            }
-            catch
-            {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            string fileName = Path.GetFileNameWithoutExtension(paletteName) + "_palette";
+            Utils.SaveBitmap(
+                () => Bitmapper.ConvertPaletteToBitmap(paletteData),
+                fileName.Replace(Utils.unmangledSuffix, ""),
+                "Save As");
         }
 
         private void BtnViewBitmap_Click(object sender, EventArgs e)
@@ -509,7 +466,7 @@ namespace Whiptools
             }
             catch
             {
-                MessageBox.Show("YOU'VE GOT TO TRY HARDER!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError("YOU'VE GOT TO TRY HARDER!");
             }
         }
 
@@ -533,8 +490,7 @@ namespace Whiptools
                         Color[] palette = Bitmapper.GetPaletteFromBitmap(bitmap);
                         if (palette.Length > 256)
                         {
-                            MessageBox.Show($"Too many colours! ({Convert.ToString(palette.Length)})",
-                                "YOU NEED MORE PRACTICE", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            Utils.MsgError($"Too many colours! ({Convert.ToString(palette.Length)})");
                             return;
                         }
                         newBitmap?.Dispose();
@@ -548,7 +504,7 @@ namespace Whiptools
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
@@ -565,7 +521,7 @@ namespace Whiptools
 
                 string fileName = saveDialog.FileName;
                 File.WriteAllBytes(fileName, Bitmapper.GetPaletteArray(palette));
-                MessageBox.Show($"Saved {fileName}", "RACE OVER", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Utils.MsgOK($"Saved {fileName}");
             }
         }
 
@@ -577,7 +533,7 @@ namespace Whiptools
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
@@ -612,7 +568,7 @@ namespace Whiptools
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
 
@@ -636,8 +592,7 @@ namespace Whiptools
                     }
                     catch
                     {
-                        MessageBox.Show("Incorrect palette!", "YOU NEED MORE PRACTICE",
-                            MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        Utils.MsgError("Incorrect palette!");
                         return;
                     }
                     using (var saveDialog = new SaveFileDialog
@@ -651,14 +606,13 @@ namespace Whiptools
 
                         string saveFile = saveDialog.FileName;
                         File.WriteAllBytes(saveFile, outputArray);
-                        MessageBox.Show($"Saved {saveFile}", "RACE OVER",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        Utils.MsgOK($"Saved {saveFile}");
                     }
                 }
             }
             catch
             {
-                MessageBox.Show("FATALITY!", "NETWORK ERROR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Utils.MsgError();
             }
         }
     }

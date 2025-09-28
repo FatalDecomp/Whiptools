@@ -90,6 +90,7 @@
   <ItemGroup>
     <Compile Include="clsAudioConverter.cs" />
     <Compile Include="clsBitmapper.cs" />
+    <Compile Include="clsUtils.cs" />
     <Compile Include="frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
