@@ -52,7 +52,11 @@ namespace Whiptools
             IntPtr ptr = bitmapData.Scan0;
             byte[] rgbArrayHigh = GetByteArrayHigh(rgbArray);
             for (int y = 0; y < height; y++)
-                Marshal.Copy(rgbArrayHigh, y * width * 3, ptr + y * stride, width * 3);
+            {
+                int offset = y * width * 3;
+                Marshal.Copy(rgbArrayHigh, offset, ptr + y * stride,
+                    Math.Min(width * 3, rgbArrayHigh.Length - offset));
+            }
             bitmap.UnlockBits(bitmapData);
             return bitmap;
         }
