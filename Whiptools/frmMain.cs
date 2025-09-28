@@ -219,20 +219,11 @@ namespace Whiptools
                     string fileName = openDialog.FileName;
                     byte[] rawData = File.ReadAllBytes(fileName);
                     byte[] decodedData = FibCipher.Decode(rawData, a0, a1);
-                    using (var saveDialog = new SaveFileDialog
-                    {
-                        Filter = "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
-                        FileName = $"{Path.GetFileNameWithoutExtension(fileName)}_decoded" + 
-                            Path.GetExtension(fileName),
-                        Title = $"Save Decoded {iniFilename} As"
-                    })
-                    {
-                        if (saveDialog.ShowDialog() != DialogResult.OK) return;
 
-                        string saveFile = saveDialog.FileName;
-                        File.WriteAllBytes(saveFile, decodedData);
-                        Utils.MsgOK($"Saved {saveFile}");
-                    }
+                    Utils.SaveBytes(decodedData,
+                        "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
+                        $"{Path.GetFileNameWithoutExtension(fileName)}_decoded" + Path.GetExtension(fileName),
+                        $"Save Decoded {iniFilename} As");
                 }
             }
             catch
@@ -466,7 +457,7 @@ namespace Whiptools
             }
             catch
             {
-                Utils.MsgError("YOU'VE GOT TO TRY HARDER!");
+                Utils.MsgError();
             }
         }
 
@@ -508,34 +499,14 @@ namespace Whiptools
             }
         }
 
-        private void SavePalette(Color[] palette, string defaultFileName)
-        {
-            using (var saveDialog = new SaveFileDialog
-            {
-                Filter = "Palette Files (*.PAL)|*.PAL|All Files (*.*)|*.*",
-                Title = "Save Palette As",
-                FileName = Path.GetFileNameWithoutExtension(defaultFileName)
-            })
-            {
-                if (saveDialog.ShowDialog() != DialogResult.OK) return;
+        private void SavePalette(Color[] palette, string defaultFileName) =>
+            Utils.SaveBytes(Bitmapper.GetPaletteArray(palette),
+                "Palette Files (*.PAL)|*.PAL|All Files (*.*)|*.*",
+                Path.GetFileNameWithoutExtension(defaultFileName),
+                "Save Palette As");
 
-                string fileName = saveDialog.FileName;
-                File.WriteAllBytes(fileName, Bitmapper.GetPaletteArray(palette));
-                Utils.MsgOK($"Saved {fileName}");
-            }
-        }
-
-        private void BtnSaveNewPalette_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                SavePalette(newPalette, newBitmapName);
-            }
-            catch
-            {
-                Utils.MsgError();
-            }
-        }
+        private void BtnSaveNewPalette_Click(object sender, EventArgs e) =>
+            SavePalette(newPalette, newBitmapName);
 
         private void BtnAddToExistingPalette_Click(object sender, EventArgs e)
         {
@@ -595,19 +566,10 @@ namespace Whiptools
                         Utils.MsgError("Incorrect palette!");
                         return;
                     }
-                    using (var saveDialog = new SaveFileDialog
-                    {
-                        Filter = "BM File (*.BM)|*.BM|DRH File (*.DRH)|*.DRH|All Files (*.*)|*.*",
-                        FileName = Path.GetFileNameWithoutExtension(newBitmapName),
-                        Title = "Save Bitmap As"
-                    })
-                    {
-                        if (saveDialog.ShowDialog() != DialogResult.OK) return;
-
-                        string saveFile = saveDialog.FileName;
-                        File.WriteAllBytes(saveFile, outputArray);
-                        Utils.MsgOK($"Saved {saveFile}");
-                    }
+                    Utils.SaveBytes(outputArray,
+                        "BM File (*.BM)|*.BM|DRH File (*.DRH)|*.DRH|All Files (*.*)|*.*",
+                        Path.GetFileNameWithoutExtension(newBitmapName),
+                        "Save Bitmap As");
                 }
             }
             catch

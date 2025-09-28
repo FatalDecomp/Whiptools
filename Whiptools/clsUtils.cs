@@ -22,7 +22,30 @@ namespace Whiptools
             MessageBox.Show(msg, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        public static void SaveBitmap(Func<Bitmap> bitmapFactory, string defaultFileName, string dialogTitle)
+        public static void SaveBytes(byte[] data, string filter, string defaultFileName, string title)
+        {
+            try
+            {
+                using (var saveDialog = new SaveFileDialog
+                {
+                    Filter = filter,
+                    FileName = defaultFileName,
+                    Title = title
+                })
+                {
+                    if (saveDialog.ShowDialog() != DialogResult.OK) return;
+
+                    File.WriteAllBytes(saveDialog.FileName, data);
+                    MsgOK($"Saved {saveDialog.FileName}");
+                }
+            }
+            catch
+            {
+                MsgError();
+            }
+        }
+
+        public static void SaveBitmap(Func<Bitmap> bitmapFactory, string defaultFileName, string title)
         {
             try
             {
@@ -30,7 +53,7 @@ namespace Whiptools
                 {
                     Filter = "Portable Network Graphics (*.png)|*.png|Windows Bitmap (*.bmp)|*.bmp|All Files (*.*)|*.*",
                     FileName = defaultFileName,
-                    Title = dialogTitle
+                    Title = title
                 })
                 {
                     if (saveDialog.ShowDialog() != DialogResult.OK) return;
