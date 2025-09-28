@@ -59,85 +59,32 @@ namespace Whiptools
 
         private void FileMangling(bool isUnmangle)
         {
-            using (var openDialog = new OpenFileDialog
-            {
-                Filter = $"{MangleType(!isUnmangle)}d Files (*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK)|" +
+            string suffix = isUnmangle ? Utils.unmangledSuffix : Utils.mangledSuffix;
+            Utils.BatchProcess(
+                filter: $"{MangleType(!isUnmangle)}d Files (*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK)|" +
                     "*.BM;*.DRH;*.HMP;*.KC;*.RAW;*.RBP;*.RFR;*.RGE;*.RSS;*.TRK|All Files (*.*)|*.*",
-                Title = $"Select {MangleType(!isUnmangle)}d Files",
-                Multiselect = true
-            })
-            {
-                if (openDialog.ShowDialog() != DialogResult.OK) return;
-
-                using (var folderDialog = new FolderBrowserDialog
+                title: $"Select {MangleType(!isUnmangle)}d Files",
+                folderDescription: $"Save {MangleType(isUnmangle).ToLower()}d files in:",
+                transform: input =>
                 {
-                    Description = $"Save {MangleType(isUnmangle).ToLower()}d files in:"
-                })
+                    byte[] output = isUnmangle ? Unmangler.Unmangle(input) : Mangler.Mangle(input);
+                    if (!isUnmangle && !VerifyMangle.Verify(input, output))
+                        throw new InvalidOperationException();
+                    return output;
+                },
+                outputFileName: filePath => Path.GetFileNameWithoutExtension(filePath) +
+                    suffix + Path.GetExtension(filePath),
+                outputType: MangleType(isUnmangle).ToLower() + "d",
+                actionType: MangleType(isUnmangle).ToLower(),
+                extraMsg: (countSucc, countFail, inputSize, outputSize, timeElapsed) =>
                 {
-                    if (folderDialog.ShowDialog() != DialogResult.OK) return;
-
-                    int countSucc = 0, countFail = 0;
-                    int inputSize = 0, outputSize = 0;
-                    string displayOutputFile = ""; // for msgbox only
-                    int firstFileSet = 0;
-                    var fileList = openDialog.FileNames
-                        .Select(f => new FileInfo(f))
-                        .OrderByDescending(fi => fi.Length);
-                    var sw = Stopwatch.StartNew();
-                    Parallel.ForEach(fileList, fi =>
-                    {
-                        try
-                        {
-                            byte[] inputData = File.ReadAllBytes(fi.FullName);
-                            byte[] outputData = isUnmangle ?
-                                Unmangler.Unmangle(inputData) : Mangler.Mangle(inputData);
-
-                            // verify mangled output
-                            if (!isUnmangle && !VerifyMangle.Verify(inputData, outputData))
-                                throw new InvalidOperationException();
-
-                            string outputFile = Path.Combine(folderDialog.SelectedPath,
-                                Path.GetFileNameWithoutExtension(fi.FullName) +
-                                (isUnmangle ? Utils.unmangledSuffix : Utils.mangledSuffix) +
-                                Path.GetExtension(fi.FullName));
-                            File.WriteAllBytes(outputFile, outputData);
-
-                            Interlocked.Increment(ref countSucc);
-                            Interlocked.Add(ref inputSize, inputData.Length);
-                            Interlocked.Add(ref outputSize, outputData.Length);
-                            if (Interlocked.CompareExchange(ref firstFileSet, 1, 0) == 0)
-                                displayOutputFile = outputFile;
-                        }
-                        catch
-                        {
-                            Interlocked.Increment(ref countFail);
-                        }
-                    });
-                    sw.Stop();
-                    string msg = "";
-                    if (openDialog.FileNames.Length == 1)
-                    {
-                        if (countSucc == 1) msg = $"Saved {displayOutputFile}";
-                        else msg = $"Failed to {MangleType(isUnmangle).ToLower()} " +
-                            openDialog.FileNames.ElementAt(0);
-                    }
-                    else
-                    {
-                        if (countSucc > 0) msg = $"Saved {countSucc} {MangleType(isUnmangle).ToLower()}" +
-                            $"d file{(countSucc > 1 ? "s" : "")} in {folderDialog.SelectedPath}";
-                        if (countFail > 0) msg += $"{(countSucc > 0 ? "\n\n" : "")}Failed to " +
-                            $"{MangleType(isUnmangle).ToLower()} {countFail} file{(countFail > 1 ? "s" : "")}!";
-                    }
-                    if (!isUnmangle)
-                    {
-                        msg += $"\n\nTime elapsed: {sw.Elapsed.TotalSeconds:F2}s";
-                        if (countSucc > 0 && outputSize > 0)
-                            msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
-                    }
-                    if (countFail > 0) Utils.MsgError(msg);
-                    else Utils.MsgOK(msg);
+                    if (isUnmangle) return "";
+                    string msg = $"\n\nTime elapsed: {timeElapsed:F2}s";
+                    if (outputSize > 0)
+                        msg += $"\nCompression ratio: {(double)outputSize / inputSize:P2}";
+                    return msg;
                 }
-            }
+            );
         }
 
         private static string MangleType(bool isUnmangle) =>
@@ -152,7 +99,7 @@ namespace Whiptools
                 "Save RAW files in:",
                 inputData => FibCipher.Decode(inputData, 115, 150),
                 outputFile => Path.GetFileName(outputFile) + ".RAW",
-                "RAW");
+                "RAW", "decode");
 
         private void BtnDecodeFatalIni_Click(object sender, EventArgs e) =>
             DecodeIniFile("FATAL.INI", 77, 101);
@@ -179,7 +126,8 @@ namespace Whiptools
 
                     Utils.SaveBytes(decodedData,
                         "Whiplash INI Files (*.INI)|*.INI|All Files (*.*)|*.*",
-                        $"{Path.GetFileNameWithoutExtension(fileName)}_decoded" + Path.GetExtension(fileName),
+                        $"{Path.GetFileNameWithoutExtension(fileName)}_decoded" +
+                            Path.GetExtension(fileName),
                         $"Save Decoded {iniFilename} As");
                 }
             }
@@ -198,16 +146,16 @@ namespace Whiptools
                 "Save WAV files in:",
                 inputData => WavAudio.ConvertRawToWav(inputData),
                 outputFile => Path.GetFileName(outputFile) + ".WAV",
-                "WAV");
+                "WAV", "convert");
 
         private void BtnConvertHMPMIDI_Click(object sender, EventArgs e) =>
             Utils.BatchProcess(
                 "HMP MIDI Files (*.HMP)|*.HMP|All Files (*.*)|*.*",
                 "Select HMP MIDI Files (Original Format)",
                 "Save revised HMP files in:",
-                input => HMPMIDI.ConvertToRevisedFormat(input),
-                fileName => Path.GetFileNameWithoutExtension(fileName) + "_revised.HMP",
-                "HMP");
+                inputData => HMPMIDI.ConvertToRevisedFormat(inputData),
+                outputFile => Path.GetFileNameWithoutExtension(outputFile) + "_revised.HMP",
+                "HMP", "convert");
 
         // bitmap viewer
 
@@ -229,8 +177,7 @@ namespace Whiptools
 
                     int countColors = 0;
                     foreach (byte b in bitmapData)
-                        if (b > countColors)
-                            countColors = b;
+                        if (b > countColors) countColors = b;
 
                     for (int i = (int)Math.Sqrt(bitmapData.Length); i > 1; i--)
                     {
