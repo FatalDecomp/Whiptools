@@ -86,12 +86,10 @@ namespace Whiptools
                         else
                         {
                             msg = "";
-                            if (countSucc > 0)
-                                msg = $"Saved {countSucc} {outputType} file{(countSucc > 1 ? "s" : "")}" +
-                                    $" in {folderDialog.SelectedPath}";
-                            if (countFail > 0)
-                                msg += $"{(countSucc > 0 ? "\n\n" : "")}Failed to {actionType} {countFail} " +
-                                    $"file{(countFail > 1 ? "s" : "")}!";
+                            if (countSucc > 0) msg = $"Saved {countSucc} {outputType} " +
+                                $"file{(countSucc > 1 ? "s" : "")} in {folderDialog.SelectedPath}";
+                            if (countFail > 0) msg += $"{(countSucc > 0 ? "\n\n" : "")}" +
+                                $"Failed to {actionType} {countFail} file{(countFail > 1 ? "s" : "")}!";
                         }
                         if (extraMsg != null)
                             msg += extraMsg(countSucc, countFail, inputSize, outputSize, sw.Elapsed.TotalSeconds);
@@ -158,8 +156,8 @@ namespace Whiptools
                                 throw new NotSupportedException();
                         }
                         string fileName = saveDialog.FileName;
-                        string desiredExt = "." + format.ToString().ToLower();
-                        if (!fileName.EndsWith(desiredExt, StringComparison.OrdinalIgnoreCase))
+                        string ext = "." + format.ToString().ToLower();
+                        if (!fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
                             fileName = Path.ChangeExtension(fileName, format.ToString().ToLower());
                         bitmap.Save(fileName, format);
                         MsgOK($"Saved {fileName}");

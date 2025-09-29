@@ -107,8 +107,7 @@ namespace Whiptools
                     if (paletteDict.TryGetValue(GetColorLow(Color.FromArgb(R, G, B)),
                         out byte paletteIndex))
                         output[y * width + x] = paletteIndex;
-                    else
-                        throw new KeyNotFoundException();
+                    else throw new KeyNotFoundException();
                 }
             }
             return output;
